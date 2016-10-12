@@ -162,8 +162,8 @@ function isFunction(v: mixed) /* : boolean %checks */ {
   return typeof v === 'function'
 }
 
-export const func: Type<Object> = {
-  name: 'Object',
+export const func: Type<Function> = {
+  name: 'Function',
   validate: (v, c) => isFunction(v) ? either.right(v) : createValidationError(v, c)
 }
 

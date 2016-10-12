@@ -4,7 +4,7 @@
 // @flow
 
 import * as either from 'flow-static-land/lib/Either'
-import * as t from 'flow-runtime/index'
+import * as t from 'flow-runtime'
 
 const Person = t.type({
   name: t.string,
