@@ -360,6 +360,20 @@ function getDefaultTypeName(props: Props): string {
 }
 
 //
+// recursive types
+//
+
+export function recursion<T>(name: string, definition: (self: Type<T>) => Type<T>): Type<T> {
+  const Self = {
+    name,
+    validate: (v, c) => Result.validate(v, c)
+  }
+  const Result = definition(Self)
+  Result.name = name
+  return Result
+}
+
+//
 // type aliases
 //
 
