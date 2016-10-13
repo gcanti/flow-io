@@ -5,20 +5,20 @@ import type { Either } from 'flow-static-land/lib/Either'
 import * as either from 'flow-static-land/lib/Either'
 import { unsafeCoerce } from 'flow-static-land/lib/Unsafe'
 
-type ContextEntry = {
+export type ContextEntry = {
   key: string,
   name: string
 };
 
-type Context = Array<ContextEntry>;
+export type Context = Array<ContextEntry>;
 
-type ValidationError = {
+export type ValidationError = {
   value: mixed,
   context: Context,
   description: string
 };
 
-type ValidationResult<T> = Either<Array<ValidationError>, T>;
+export type ValidationResult<T> = Either<Array<ValidationError>, T>;
 
 export interface Type<T> {
   name: string;
@@ -60,11 +60,15 @@ function getDefaultContext<T>(type: Type<T>): Context {
   return [{ key: '', name: type.name }]
 }
 
+function getErrorDescription(value: mixed, context: Context): string {
+  return `Invalid value ${JSON.stringify(value)} supplied to ${context.map(({ key, name }) => `${key}: ${name}`).join('/')}`
+}
+
 function createValidationError<T>(value: mixed, context: Context): ValidationResult<T> {
   return either.left([{
     value,
     context,
-    description: `Invalid value ${JSON.stringify(value)} supplied to ${context.map(({ key, name }) => `${key}: ${name}`).join('/')}`
+    description: getErrorDescription(value, context)
   }])
 }
 
@@ -84,35 +88,64 @@ function getFunctionName(f: Function): string {
 }
 
 //
-// irreducibles
+// literals
 //
 
-export function of<T: string | number | boolean, O: { value: T }>(o: O): Type<$PropertyType<O, 'value'>> { // eslint-disable-line no-unused-vars
+export interface LiteralType<T> extends Type<T> {
+  kind: 'literal';
+  value: T;
+}
+
+export function literal<T: string | number | boolean, O: { value: T }>(o: O): LiteralType<$PropertyType<O, 'value'>> { // eslint-disable-line no-unused-vars
+  const value = o.value
   return {
-    name: JSON.stringify(o.value),
+    kind: 'literal',
+    value,
+    name: JSON.stringify(value),
     validate: (v, c) => {
-      return v === o.value ? either.right(o.value) : createValidationError(v, c)
+      return v === value ? either.right(value) : createValidationError(v, c)
     }
   }
 }
 
-export function instanceOf<T>(cl: Class<T>, name?: string): Type<T> {
+//
+// classes
+//
+
+export interface ClassType<T> extends Type<T> {
+  kind: 'class';
+  ctor: Class<T>;
+}
+
+export function instanceOf<T>(ctor: Class<T>, name?: string): ClassType<T> {
   return {
-    name: name || getFunctionName(cl),
-    validate: (v, c) => v instanceof cl ? either.right(v) : createValidationError(v, c)
+    kind: 'class',
+    ctor,
+    name: name || getFunctionName(ctor),
+    validate: (v, c) => v instanceof ctor ? either.right(v) : createValidationError(v, c)
   }
+}
+
+//
+// irreducibles
+//
+
+export interface IrreducibleType<T> extends Type<T> {
+  kind: 'irreducible';
 }
 
 function isNil(v: mixed) /* : boolean %checks */ {
   return v === void 0 || v === null
 }
 
-export const nil: Type<void | null> = {
+export const nil: IrreducibleType<void | null> = {
+  kind: 'irreducible',
   name: 'nil',
   validate: (v, c) => isNil(v) ? either.right(v) : createValidationError(v, c)
 }
 
-export const any: Type<any> = {
+export const any: IrreducibleType<any> = {
+  kind: 'irreducible',
   name: 'any',
   validate: (v, c) => either.right(v) // eslint-disable-line no-unused-vars
 }
@@ -121,7 +154,8 @@ function isString(v: mixed) /* : boolean %checks */ {
   return typeof v === 'string'
 }
 
-export const string: Type<string> = {
+export const string: IrreducibleType<string> = {
+  kind: 'irreducible',
   name: 'string',
   validate: (v, c) => isString(v) ? either.right(v) : createValidationError(v, c)
 }
@@ -130,7 +164,8 @@ function isNumber(v: mixed) /* : boolean %checks */ {
   return typeof v === 'number' && isFinite(v) && !isNaN(v)
 }
 
-export const number: Type<number> = {
+export const number: IrreducibleType<number> = {
+  kind: 'irreducible',
   name: 'number',
   validate: (v, c) => isNumber(v) ? either.right(v) : createValidationError(v, c)
 }
@@ -139,12 +174,14 @@ function isBoolean(v: mixed) /* : boolean %checks */ {
   return typeof v === 'boolean'
 }
 
-export const boolean: Type<boolean> = {
+export const boolean: IrreducibleType<boolean> = {
+  kind: 'irreducible',
   name: 'boolean',
   validate: (v, c) => isBoolean(v) ? either.right(v) : createValidationError(v, c)
 }
 
-export const array: Type<Array<any>> = {
+export const arr: IrreducibleType<Array<any>> = {
+  kind: 'irreducible',
   name: 'Array',
   validate: (v, c) => Array.isArray(v) ? either.right(v) : createValidationError(v, c)
 }
@@ -153,7 +190,8 @@ function isObject(v: mixed) /* : boolean %checks */ {
   return !isNil(v) && typeof v === 'object' && !Array.isArray(v)
 }
 
-export const object: Type<Object> = {
+export const obj: IrreducibleType<Object> = {
+  kind: 'irreducible',
   name: 'Object',
   validate: (v, c) => isObject(v) ? either.right(v) : createValidationError(v, c)
 }
@@ -162,21 +200,29 @@ function isFunction(v: mixed) /* : boolean %checks */ {
   return typeof v === 'function'
 }
 
-export const func: Type<Function> = {
+export const fun: IrreducibleType<Function> = {
+  kind: 'irreducible',
   name: 'Function',
   validate: (v, c) => isFunction(v) ? either.right(v) : createValidationError(v, c)
 }
 
 //
-// lists
+// arrays
 //
+
+export interface ArrayType<T> extends Type<Array<T>> {
+  kind: 'array';
+  type: Type<T>;
+}
 
 function getDefaultListName<T>(type: Type<T>): string {
   return `Array<${getTypeName(type)}>`
 }
 
-export function list<T>(type: Type<T>, name?: string): Type<Array<T>> {
+export function array<T>(type: Type<T>, name?: string): ArrayType<T> {
   return {
+    kind: 'array',
+    type,
     name: name || getDefaultListName(type),
     validate: (v, c) => {
       return either.chain(a => {
@@ -188,7 +234,7 @@ export function list<T>(type: Type<T>, name?: string): Type<Array<T>> {
           }
         }
         return errors.length ? either.left(errors) : either.right(a)
-      }, array.validate(v, c))
+      }, arr.validate(v, c))
     }
   }
 }
@@ -197,17 +243,24 @@ export function list<T>(type: Type<T>, name?: string): Type<Array<T>> {
 // unions
 //
 
+export interface UnionType<TS, T> extends Type<T> {
+  kind: 'union';
+  types: TS;
+}
+
 function getDefaultUnionName(types: Array<Type<*>>): string {
   return `(${types.map(getTypeName).join(' | ')})`
 }
 
-declare function union<A, B, C, D, E, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>, TE: Type<E>>(types: [TA, TB, TC, TD, TE], name?: string) : Type<A | B | C | D | E>; // eslint-disable-line no-redeclare
-declare function union<A, B, C, D, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>>(types: [TA, TB, TC, TD], name?: string) : Type<A | B | C | D>; // eslint-disable-line no-redeclare
-declare function union<A, B, C, TA: Type<A>, TB: Type<B>, TC: Type<C>>(types: [TA, TB, TC], name?: string) : Type<A | B | C>; // eslint-disable-line no-redeclare
-declare function union<A, B, TA: Type<A>, TB: Type<B>>(types: [TA, TB], name?: string) : Type<A | B>; // eslint-disable-line no-redeclare
+declare function union<A, B, C, D, E, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>, TE: Type<E>, TS: [TA, TB, TC, TD, TE]>(types: TS, name?: string) : UnionType<TS, A | B | C | D | E>; // eslint-disable-line no-redeclare
+declare function union<A, B, C, D, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>, TS: [TA, TB, TC, TD]>(types: TS, name?: string) : UnionType<TS, A | B | C | D>; // eslint-disable-line no-redeclare
+declare function union<A, B, C, TA: Type<A>, TB: Type<B>, TC: Type<C>, TS: [TA, TB, TC]>(types: TS, name?: string) : UnionType<TS, A | B | C>; // eslint-disable-line no-redeclare
+declare function union<A, B, TA: Type<A>, TB: Type<B>, TS: [TA, TB]>(types: TS, name?: string) : UnionType<TS, A | B>; // eslint-disable-line no-redeclare
 
-export function union(types: Array<Type<*>>, name?: string): Type<*> {  // eslint-disable-line no-redeclare
+export function union(types: Array<Type<*>>, name?: string): UnionType<*, *> {  // eslint-disable-line no-redeclare
   return {
+    kind: 'union',
+    types,
     name: name || getDefaultUnionName(types),
     validate: (v, c) => {
       for (let i = 0, len = types.length; i < len; i++) {
@@ -226,17 +279,24 @@ export function union(types: Array<Type<*>>, name?: string): Type<*> {  // eslin
 // tuples
 //
 
+export interface TupleType<TS, T> extends Type<T> {
+  kind: 'tuple';
+  types: TS;
+}
+
 function getDefaultTupleName(types: Array<Type<*>>): string {
   return `[${types.map(getTypeName).join(', ')}]`
 }
 
-declare function tuple<A, B, C, D, E, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>, TE: Type<E>>(types: [TA, TB, TC, TD, TE], name?: string) : Type<[A, B, C, D, E]>; // eslint-disable-line no-redeclare
-declare function tuple<A, B, C, D, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>>(types: [TA, TB, TC, TD], name?: string) : Type<[A, B, C, D]>; // eslint-disable-line no-redeclare
-declare function tuple<A, B, C, TA: Type<A>, TB: Type<B>, TC: Type<C>>(types: [TA, TB, TC], name?: string) : Type<[A, B, C]>; // eslint-disable-line no-redeclare
-declare function tuple<A, B, TA: Type<A>, TB: Type<B>>(types: [TA, TB], name?: string) : Type<[A, B]>; // eslint-disable-line no-redeclare
+declare function tuple<A, B, C, D, E, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>, TE: Type<E>, TS: [TA, TB, TC, TD, TE]>(types: TS, name?: string) : TupleType<TS, [A, B, C, D, E]>; // eslint-disable-line no-redeclare
+declare function tuple<A, B, C, D, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>, TS: [TA, TB, TC, TD]>(types: TS, name?: string) : TupleType<TS, [A, B, C, D]>; // eslint-disable-line no-redeclare
+declare function tuple<A, B, C, TA: Type<A>, TB: Type<B>, TC: Type<C>, TS: [TA, TB, TC]>(types: TS, name?: string) : TupleType<TS, [A, B, C]>; // eslint-disable-line no-redeclare
+declare function tuple<A, B, TA: Type<A>, TB: Type<B>, TS: [TA, TB]>(types: TS, name?: string) : TupleType<TS, [A, B]>; // eslint-disable-line no-redeclare
 
-export function tuple(types: Array<Type<*>>, name?: string): Type<*> {  // eslint-disable-line no-redeclare
+export function tuple(types: Array<Type<*>>, name?: string): TupleType<*, *> {  // eslint-disable-line no-redeclare
   return {
+    kind: 'tuple',
+    types,
     name: name || getDefaultTupleName(types),
     validate: (v, c) => {
       return either.chain(a => {
@@ -249,7 +309,7 @@ export function tuple(types: Array<Type<*>>, name?: string): Type<*> {  // eslin
           }
         }
         return errors.length ? either.left(errors) : either.right(a)
-      }, array.validate(v, c))
+      }, arr.validate(v, c))
     }
   }
 }
@@ -258,17 +318,24 @@ export function tuple(types: Array<Type<*>>, name?: string): Type<*> {  // eslin
 // intersections
 //
 
+export interface IntersectionType<TS, T> extends Type<T> {
+  kind: 'intersection';
+  types: TS;
+}
+
 function getDefaultIntersectionName(types: Array<Type<*>>): string {
   return `(${types.map(getTypeName).join(' & ')})`
 }
 
-declare function intersection<A, B, C, D, E, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>, TE: Type<E>>(types: [TA, TB, TC, TD, TE], name?: string) : Type<A & B & C & D & E>; // eslint-disable-line no-redeclare
-declare function intersection<A, B, C, D, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>>(types: [TA, TB, TC, TD], name?: string) : Type<A & B & C & D>; // eslint-disable-line no-redeclare
-declare function intersection<A, B, C, TA: Type<A>, TB: Type<B>, TC: Type<C>>(types: [TA, TB, TC], name?: string) : Type<A & B & C>; // eslint-disable-line no-redeclare
-declare function intersection<A, B, TA: Type<A>, TB: Type<B>>(types: [TA, TB], name?: string) : Type<A & B>; // eslint-disable-line no-redeclare
+declare function intersection<A, B, C, D, E, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>, TE: Type<E>, TS: [TA, TB, TC, TD, TE]>(types: TS, name?: string) : IntersectionType<TS, A & B & C & D & E>; // eslint-disable-line no-redeclare
+declare function intersection<A, B, C, D, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>, TS: [TA, TB, TC, TD]>(types: TS, name?: string) : IntersectionType<TS, A & B & C & D>; // eslint-disable-line no-redeclare
+declare function intersection<A, B, C, TA: Type<A>, TB: Type<B>, TC: Type<C>, TS: [TA, TB, TC]>(types: TS, name?: string) : IntersectionType<TS, A & B & C>; // eslint-disable-line no-redeclare
+declare function intersection<A, B, TA: Type<A>, TB: Type<B>, TS: [TA, TB]>(types: TS, name?: string) : IntersectionType<TS, A & B>; // eslint-disable-line no-redeclare
 
-export function intersection(types: Array<Type<*>>, name?: string): Type<*> {  // eslint-disable-line no-redeclare
+export function intersection(types: Array<Type<*>>, name?: string): IntersectionType<*, *> {  // eslint-disable-line no-redeclare
   return {
+    kind: 'intersection',
+    types,
     name: name || getDefaultIntersectionName(types),
     validate: (v, c) => {
       const errors = []
@@ -285,15 +352,22 @@ export function intersection(types: Array<Type<*>>, name?: string): Type<*> {  /
 }
 
 //
-// maybe types (TODO testare che con usafeCorece non si persa il tyope checking del tipo wrappato)
+// maybe
 //
+
+export interface MaybeType<T> extends Type<?T> {
+  kind: 'maybe';
+  type: Type<T>;
+}
 
 function getDefaultMaybeName<T>(type: Type<T>): string {
   return `?${getTypeName(type)}`
 }
 
-export function maybe<T>(type: Type<T>, name?: string): Type<?T> {
+export function maybe<T>(type: Type<T>, name?: string): MaybeType<T> {
   return {
+    kind: 'maybe',
+    type,
     name: name || getDefaultMaybeName(type),
     validate: (v, c) => {
       return unsafeCoerce(isNil(v) ? either.right(v) : type.validate(v, c))
@@ -305,12 +379,21 @@ export function maybe<T>(type: Type<T>, name?: string): Type<?T> {
 // map objects
 //
 
+export interface MapType<D, C> extends Type<{ [key: D]: C }> {
+  kind: 'map';
+  domain: Type<D>;
+  codomain: Type<C>;
+}
+
 function getDefaultMapName<D, C>(domain: Type<D>, codomain: Type<C>): string {
   return `{ [key: ${getTypeName(domain)}]: ${getTypeName(codomain)} }`
 }
 
-export function dictionary<D, C>(domain: Type<D>, codomain: Type<C>, name?: string): Type<{ [key: D]: C }> {
+export function map<D, C>(domain: Type<D>, codomain: Type<C>, name?: string): MapType<D, C> {
   return {
+    kind: 'map',
+    domain,
+    codomain,
     name: name || getDefaultMapName(domain, codomain),
     validate: (v, c) => {
       return either.chain(o => {
@@ -326,7 +409,7 @@ export function dictionary<D, C>(domain: Type<D>, codomain: Type<C>, name?: stri
           }
         }
         return errors.length ? either.left(errors) : either.right(o)
-      }, object.validate(v, c))
+      }, obj.validate(v, c))
     }
   }
 }
@@ -335,14 +418,21 @@ export function dictionary<D, C>(domain: Type<D>, codomain: Type<C>, name?: stri
 // refinements
 //
 
-type Predicate<T> = (value: T) => boolean;
+export type Predicate<T> = (value: T) => boolean;
+
+export interface RefinementType<T> extends Type<T> {
+  kind: 'refinement';
+  predicate: Predicate<T>;
+}
 
 function getDefaultRefineName<T>(type: Type<T>, predicate: Predicate<T>): string {
   return `(${getTypeName(type)} | ${getFunctionName(predicate)})`
 }
 
-export function refinement<T>(type: Type<T>, predicate: Predicate<T>, name?: string): Type<T> {
+export function refinement<T>(type: Type<T>, predicate: Predicate<T>, name?: string): RefinementType<T> {
   return {
+    kind: 'refinement',
+    predicate,
     name: name || getDefaultRefineName(type, predicate),
     validate: (v, c) => {
       return either.chain(
@@ -351,12 +441,6 @@ export function refinement<T>(type: Type<T>, predicate: Predicate<T>, name?: str
       )
     }
   }
-}
-
-type Props = {[key: string]: Type<any>};
-
-function getDefaultTypeName(props: Props): string {
-  return `{ ${Object.keys(props).map(k => `${k}: ${props[k].name}`).join(', ')} }`
 }
 
 //
@@ -374,11 +458,24 @@ export function recursion<T>(name: string, definition: (self: Type<T>) => Type<T
 }
 
 //
-// type aliases
+// objects
 //
 
-export function type<P: Props>(props: P, name?: string): Type<$ObjMap<P, <T>(v: Type<T>) => T>> {
+export type Props = {[key: string]: Type<any>};
+
+export interface ObjectType<P: Props> extends Type<$ObjMap<P, <T>(v: Type<T>) => T>> {
+  kind: 'object';
+  props: P;
+}
+
+function getDefaultTypeName(props: Props): string {
+  return `{ ${Object.keys(props).map(k => `${k}: ${props[k].name}`).join(', ')} }`
+}
+
+export function object<P: Props>(props: P, name?: string): ObjectType<P> {
   return {
+    kind: 'object',
+    props,
     name: name || getDefaultTypeName(props),
     validate: (v, c) => {
       return either.chain(o => {
@@ -391,7 +488,7 @@ export function type<P: Props>(props: P, name?: string): Type<$ObjMap<P, <T>(v: 
           }
         }
         return errors.length ? either.left(errors) : either.right(o)
-      }, object.validate(v, c))
+      }, obj.validate(v, c))
     }
   }
 }
