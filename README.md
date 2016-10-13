@@ -1,22 +1,55 @@
-# Example
+# The idea
+
+A value of type `Type<T>` (called "runtime type") is a representation of the type `T`:
 
 ```js
-// @flow
+interface Type<T> {
+  name: string;
+  validate: (value: mixed, context: Context) => ValidationResult<T>;
+}
+```
 
-import * as either from 'flow-static-land/lib/Either'
+For example the runtime type representing the type `string` is
+
+```js
+function isString(v: mixed) /* : boolean %checks */ {
+  return typeof v === 'string'
+}
+
+export const string: Type<string> = {
+  name: 'string',
+  validate: (v, c) => isString(v) ? either.right(v) : createValidationError(v, c)
+}
+```
+
+The type `T` can be extracted from a runtime type
+
+```js
 import * as t from 'flow-runtime'
 
-const Person = t.type({
+type ExtractType<A, TA: Type<A>> = A;
+type TypeOf<T> = ExtractType<*, T>;
+
+const Person = t.object({
   name: t.string,
   age: t.number
 })
 
-const validation = t.validate({}, Person)
-if (either.isRight(validation)) {
-  const person: { name: string, age: number } = either.fromRight(validation)
-} else {
-  console.log(validation)
-  // => Invalid value undefined supplied to : { name: string, age: number }/name: string
-  // => Invalid value undefined supplied to : { name: string, age: number }/age: number
-}
+// this is equivalent to
+// type PersonT = { name: string, age: number };
+type PersonT = TypeOf<typeof Person>;
+```
+
+A runtime type can be used to validate an object in memory (for example an API payload)
+
+```js
+// ok
+t.check(JSON.parse('{"name":"Giulio","age":43}'), Person)
+
+// throws Invalid value undefined supplied to : { name: string, age: number }/age: number
+t.check(JSON.parse('{"name":"Giulio"}'), Person)
+
+// doesn't throw, returns a data structure containig
+// the validation errors
+t.validate(JSON.parse('{"name":"Giulio"}'), Person)
 ```
