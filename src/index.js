@@ -64,12 +64,16 @@ function getErrorDescription(value: mixed, context: Context): string {
   return `Invalid value ${JSON.stringify(value)} supplied to ${context.map(({ key, name }) => `${key}: ${name}`).join('/')}`
 }
 
-function createValidationError<T>(value: mixed, context: Context): ValidationResult<T> {
-  return either.left([{
+function createValidationError(value: mixed, context: Context): ValidationError {
+  return {
     value,
     context,
     description: getErrorDescription(value, context)
-  }])
+  }
+}
+
+function createValidationResult<T>(value: mixed, context: Context): ValidationResult<T> {
+  return either.left([createValidationError(value, context)])
 }
 
 function createContextEntry<T>(key: string, type: Type<T>): ContextEntry {
@@ -111,7 +115,7 @@ export function literal<T: string | number | boolean, O: { value: T }>(o: O): Li
     value,
     name: JSON.stringify(value),
     validate: (v, c) => {
-      return v === value ? either.right(value) : createValidationError(v, c)
+      return v === value ? either.right(value) : createValidationResult(v, c)
     }
   }
 }
@@ -130,7 +134,7 @@ export function instanceOf<T>(ctor: Class<T>, name?: string): ClassType<T> {
     kind: 'class',
     ctor,
     name: name || getFunctionName(ctor),
-    validate: (v, c) => v instanceof ctor ? either.right(v) : createValidationError(v, c)
+    validate: (v, c) => v instanceof ctor ? either.right(v) : createValidationResult(v, c)
   }
 }
 
@@ -149,7 +153,7 @@ function isNil(v: mixed) /* : boolean %checks */ {
 export const nil: IrreducibleType<void | null> = {
   kind: 'irreducible',
   name: 'nil',
-  validate: (v, c) => isNil(v) ? either.right(v) : createValidationError(v, c)
+  validate: (v, c) => isNil(v) ? either.right(v) : createValidationResult(v, c)
 }
 
 export const any: IrreducibleType<any> = {
@@ -165,7 +169,7 @@ function isString(v: mixed) /* : boolean %checks */ {
 export const string: IrreducibleType<string> = {
   kind: 'irreducible',
   name: 'string',
-  validate: (v, c) => isString(v) ? either.right(v) : createValidationError(v, c)
+  validate: (v, c) => isString(v) ? either.right(v) : createValidationResult(v, c)
 }
 
 function isNumber(v: mixed) /* : boolean %checks */ {
@@ -175,7 +179,7 @@ function isNumber(v: mixed) /* : boolean %checks */ {
 export const number: IrreducibleType<number> = {
   kind: 'irreducible',
   name: 'number',
-  validate: (v, c) => isNumber(v) ? either.right(v) : createValidationError(v, c)
+  validate: (v, c) => isNumber(v) ? either.right(v) : createValidationResult(v, c)
 }
 
 function isBoolean(v: mixed) /* : boolean %checks */ {
@@ -185,13 +189,13 @@ function isBoolean(v: mixed) /* : boolean %checks */ {
 export const boolean: IrreducibleType<boolean> = {
   kind: 'irreducible',
   name: 'boolean',
-  validate: (v, c) => isBoolean(v) ? either.right(v) : createValidationError(v, c)
+  validate: (v, c) => isBoolean(v) ? either.right(v) : createValidationResult(v, c)
 }
 
 export const arr: IrreducibleType<Array<any>> = {
   kind: 'irreducible',
   name: 'Array',
-  validate: (v, c) => Array.isArray(v) ? either.right(v) : createValidationError(v, c)
+  validate: (v, c) => Array.isArray(v) ? either.right(v) : createValidationResult(v, c)
 }
 
 function isObject(v: mixed) /* : boolean %checks */ {
@@ -201,7 +205,7 @@ function isObject(v: mixed) /* : boolean %checks */ {
 export const obj: IrreducibleType<Object> = {
   kind: 'irreducible',
   name: 'Object',
-  validate: (v, c) => isObject(v) ? either.right(v) : createValidationError(v, c)
+  validate: (v, c) => isObject(v) ? either.right(v) : createValidationResult(v, c)
 }
 
 function isFunction(v: mixed) /* : boolean %checks */ {
@@ -211,7 +215,7 @@ function isFunction(v: mixed) /* : boolean %checks */ {
 export const fun: IrreducibleType<Function> = {
   kind: 'irreducible',
   name: 'Function',
-  validate: (v, c) => isFunction(v) ? either.right(v) : createValidationError(v, c)
+  validate: (v, c) => isFunction(v) ? either.right(v) : createValidationResult(v, c)
 }
 
 //
@@ -278,7 +282,7 @@ export function union(types: Array<Type<*>>, name?: string): UnionType<*, *> {  
           return validation
         }
       }
-      return createValidationError(v, c)
+      return createValidationResult(v, c)
     }
   }
 }
@@ -444,11 +448,25 @@ export function refinement<T>(type: Type<T>, predicate: Predicate<T>, name?: str
     name: name || getDefaultRefineName(type, predicate),
     validate: (v, c) => {
       return either.chain(
-        t => predicate(t) ? either.right(t) : createValidationError(v, c),
+        t => predicate(t) ? either.right(t) : createValidationResult(v, c),
         type.validate(v, c)
       )
     }
   }
+}
+
+//
+// recursive types
+//
+
+export function recursion<T>(name: string, definition: (self: Type<T>) => Type<T>): Type<T> {
+  const Self = {
+    name,
+    validate: (v, c) => Result.validate(v, c)
+  }
+  const Result = definition(Self)
+  Result.name = name
+  return Result
 }
 
 //
@@ -472,7 +490,7 @@ export function $keys<P: Props>(type: ObjectType<P>, name?: string): $KeysType<P
     name: name || getDefault$KeysName(type),
     validate: (v, c) => {
       return either.chain(
-        s => keys.hasOwnProperty(v) ? either.right(s) : createValidationError(v, c),
+        s => keys.hasOwnProperty(v) ? either.right(s) : createValidationResult(v, c),
         string.validate(v, c)
       )
     }
@@ -480,17 +498,37 @@ export function $keys<P: Props>(type: ObjectType<P>, name?: string): $KeysType<P
 }
 
 //
-// recursive types
+// $Exact
 //
 
-export function recursion<T>(name: string, definition: (self: Type<T>) => Type<T>): Type<T> {
-  const Self = {
+export interface $ExactType<P: Props> extends Type<$Exact<$ObjMap<P, <T>(v: Type<T>) => T>>> {
+  kind: '$exact';
+  props: P;
+}
+
+function getDefault$ExactName(props: Props): string {
+  return `$Exact<${getDefaultObjectName(props)}>`
+}
+
+export function $exact<P: Props>(props: P, name?: string): $ExactType<P> {
+  name = name || getDefault$ExactName(props)
+  const type = object(props, name)
+  return {
+    kind: '$exact',
+    props,
     name,
-    validate: (v, c) => Result.validate(v, c)
+    validate: (v, c) => {
+      return either.chain(o => {
+        const errors = []
+        for (let k in o) {
+          if (!props.hasOwnProperty(k)) {
+            errors.push(createValidationError(v, c.concat(createContextEntry(k, nil))))
+          }
+        }
+        return errors.length ? either.left(errors) : either.right(unsafeCoerce(o))
+      }, type.validate(v, c))
+    }
   }
-  const Result = definition(Self)
-  Result.name = name
-  return Result
 }
 
 //
@@ -504,7 +542,7 @@ export interface ObjectType<P: Props> extends Type<$ObjMap<P, <T>(v: Type<T>) =>
   props: P;
 }
 
-function getDefaultTypeName(props: Props): string {
+function getDefaultObjectName(props: Props): string {
   return `{ ${Object.keys(props).map(k => `${k}: ${props[k].name}`).join(', ')} }`
 }
 
@@ -512,7 +550,7 @@ export function object<P: Props>(props: P, name?: string): ObjectType<P> {
   return {
     kind: 'object',
     props,
-    name: name || getDefaultTypeName(props),
+    name: name || getDefaultObjectName(props),
     validate: (v, c) => {
       return either.chain(o => {
         const errors = []
