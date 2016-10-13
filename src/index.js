@@ -87,6 +87,14 @@ function getFunctionName(f: Function): string {
   return f.displayName || f.name || '<function' + f.length + '>'
 }
 
+function getObjectKeys<O: { [key: string]: any }>(o: O): $ObjMap<O, () => true> {
+  const keys = {}
+  for (let k in o) {
+    keys[k] = true
+  }
+  return keys
+}
+
 //
 // literals
 //
@@ -438,6 +446,34 @@ export function refinement<T>(type: Type<T>, predicate: Predicate<T>, name?: str
       return either.chain(
         t => predicate(t) ? either.right(t) : createValidationError(v, c),
         type.validate(v, c)
+      )
+    }
+  }
+}
+
+//
+// $Keys
+//
+
+export interface $KeysType<P> extends Type<$Keys<P>> {
+  kind: '$keys';
+  type: ObjectType<P>;
+}
+
+function getDefault$KeysName<P: Props>(type: ObjectType<P>): string {
+  return `$Keys<${type.name}>`
+}
+
+export function $keys<P: Props>(type: ObjectType<P>, name?: string): $KeysType<P> {
+  const keys = getObjectKeys(type.props)
+  return {
+    kind: '$keys',
+    type,
+    name: name || getDefault$KeysName(type),
+    validate: (v, c) => {
+      return either.chain(
+        s => keys.hasOwnProperty(v) ? either.right(s) : createValidationError(v, c),
+        string.validate(v, c)
       )
     }
   }
