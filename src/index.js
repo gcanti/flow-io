@@ -429,7 +429,7 @@ export function map<D, C>(domain: Type<D>, codomain: Type<C>, name?: string): Ma
       return either.chain(o => {
         const errors = []
         for (let k in o) {
-          const domainValidation = domain.validate(o[k], c.concat(createContextEntry(k, domain)))
+          const domainValidation = domain.validate(k, c.concat(createContextEntry(k, domain)))
           if (either.isLeft(domainValidation)) {
             pushAll(errors, either.fromLeft(domainValidation))
           }
