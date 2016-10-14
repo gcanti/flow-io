@@ -103,6 +103,20 @@ function getObjectKeys<O: { [key: string]: any }>(o: O): $ObjMap<O, () => true> 
   return keys
 }
 
+function pushAll<A>(xs: Array<A>, ys: Array<A>): void {
+  Array.prototype.push.apply(xs, ys)
+}
+
+function checkAdditionalProps(props: Props, o: Object, c: Context): Array<ValidationError> {
+  const errors = []
+  for (let k in o) {
+    if (!props.hasOwnProperty(k)) {
+      errors.push(createValidationError(o[k], c.concat(createContextEntry(k, nil))))
+    }
+  }
+  return errors
+}
+
 //
 // literals
 //
@@ -246,7 +260,7 @@ export function array<T>(type: Type<T>, name?: string): ArrayType<T> {
         for (let i = 0, len = a.length; i < len; i++) {
           const validation = type.validate(a[i], c.concat(createContextEntry(String(i), type)))
           if (either.isLeft(validation)) {
-            Array.prototype.push.apply(errors, either.fromLeft(validation))
+            pushAll(errors, either.fromLeft(validation))
           }
         }
         return errors.length ? either.left(errors) : either.right(a)
@@ -321,7 +335,7 @@ export function tuple(types: Array<Type<*>>, name?: string): TupleType<*, *> {  
           const type = types[i]
           const validation = type.validate(a[i], c.concat(createContextEntry(String(i), type)))
           if (either.isLeft(validation)) {
-            Array.prototype.push.apply(errors, either.fromLeft(validation))
+            pushAll(errors, either.fromLeft(validation))
           }
         }
         return errors.length ? either.left(errors) : either.right(a)
@@ -359,7 +373,7 @@ export function intersection(types: Array<Type<*>>, name?: string): Intersection
         const type = types[i]
         const validation = type.validate(v, c.concat(createContextEntry(String(i), type)))
         if (either.isLeft(validation)) {
-          Array.prototype.push.apply(errors, either.fromLeft(validation))
+          pushAll(errors, either.fromLeft(validation))
         }
       }
       return errors.length ? either.left(errors) : either.right(v)
@@ -417,11 +431,11 @@ export function map<D, C>(domain: Type<D>, codomain: Type<C>, name?: string): Ma
         for (let k in o) {
           const domainValidation = domain.validate(o[k], c.concat(createContextEntry(k, domain)))
           if (either.isLeft(domainValidation)) {
-            Array.prototype.push.apply(errors, either.fromLeft(domainValidation))
+            pushAll(errors, either.fromLeft(domainValidation))
           }
           const codomainValidation = codomain.validate(o[k], c.concat(createContextEntry(k, codomain)))
           if (either.isLeft(codomainValidation)) {
-            Array.prototype.push.apply(errors, either.fromLeft(codomainValidation))
+            pushAll(errors, either.fromLeft(codomainValidation))
           }
         }
         return errors.length ? either.left(errors) : either.right(o)
@@ -523,12 +537,7 @@ export function $exact<P: Props>(props: P, name?: string): $ExactType<P> {
     name,
     validate: (v, c) => {
       return either.chain(o => {
-        const errors = []
-        for (let k in o) {
-          if (!props.hasOwnProperty(k)) {
-            errors.push(createValidationError(o[k], c.concat(createContextEntry(k, nil))))
-          }
-        }
+        const errors = checkAdditionalProps(props, o, c)
         return errors.length ? either.left(errors) : either.right(unsafeCoerce(o))
       }, type.validate(v, c))
     }
@@ -562,15 +571,11 @@ export function $shape<P: Props>(type: ObjectType<P>, name?: string): $ShapeType
             const type = props[prop]
             const validation = type.validate(o[prop], c.concat(createContextEntry(prop, type)))
             if (either.isLeft(validation)) {
-              Array.prototype.push.apply(errors, either.fromLeft(validation))
+              pushAll(errors, either.fromLeft(validation))
             }
           }
         }
-        for (let k in o) {
-          if (!props.hasOwnProperty(k)) {
-            errors.push(createValidationError(o[k], c.concat(createContextEntry(k, nil))))
-          }
-        }
+        pushAll(errors, checkAdditionalProps(props, o, c))
         return errors.length ? either.left(errors) : either.right(o)
       }, obj.validate(v, c))
     }
@@ -604,7 +609,7 @@ export function object<P: Props>(props: P, name?: string): ObjectType<P> {
           const type = props[k]
           const validation = type.validate(o[k], c.concat(createContextEntry(k, type)))
           if (either.isLeft(validation)) {
-            Array.prototype.push.apply(errors, either.fromLeft(validation))
+            pushAll(errors, either.fromLeft(validation))
           }
         }
         return errors.length ? either.left(errors) : either.right(o)
