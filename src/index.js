@@ -382,7 +382,7 @@ export function intersection(types: Array<Type<*>>, name?: string): Intersection
 }
 
 //
-// maybe
+// maybes
 //
 
 export interface MaybeType<T> extends Type<?T> {
