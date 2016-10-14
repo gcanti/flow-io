@@ -227,7 +227,7 @@ export interface ArrayType<T> extends Type<Array<T>> {
   type: Type<T>;
 }
 
-function getDefaultListName<T>(type: Type<T>): string {
+export function getDefaultListName<T>(type: Type<T>): string {
   return `Array<${getTypeName(type)}>`
 }
 
@@ -260,7 +260,7 @@ export interface UnionType<TS, T> extends Type<T> {
   types: TS;
 }
 
-function getDefaultUnionName(types: Array<Type<*>>): string {
+export function getDefaultUnionName(types: Array<Type<*>>): string {
   return `(${types.map(getTypeName).join(' | ')})`
 }
 
@@ -296,7 +296,7 @@ export interface TupleType<TS, T> extends Type<T> {
   types: TS;
 }
 
-function getDefaultTupleName(types: Array<Type<*>>): string {
+export function getDefaultTupleName(types: Array<Type<*>>): string {
   return `[${types.map(getTypeName).join(', ')}]`
 }
 
@@ -335,7 +335,7 @@ export interface IntersectionType<TS, T> extends Type<T> {
   types: TS;
 }
 
-function getDefaultIntersectionName(types: Array<Type<*>>): string {
+export function getDefaultIntersectionName(types: Array<Type<*>>): string {
   return `(${types.map(getTypeName).join(' & ')})`
 }
 
@@ -372,7 +372,7 @@ export interface MaybeType<T> extends Type<?T> {
   type: Type<T>;
 }
 
-function getDefaultMaybeName<T>(type: Type<T>): string {
+export function getDefaultMaybeName<T>(type: Type<T>): string {
   return `?${getTypeName(type)}`
 }
 
@@ -397,7 +397,7 @@ export interface MapType<D, C> extends Type<{ [key: D]: C }> {
   codomain: Type<C>;
 }
 
-function getDefaultMapName<D, C>(domain: Type<D>, codomain: Type<C>): string {
+export function getDefaultMapName<D, C>(domain: Type<D>, codomain: Type<C>): string {
   return `{ [key: ${getTypeName(domain)}]: ${getTypeName(codomain)} }`
 }
 
@@ -437,7 +437,7 @@ export interface RefinementType<T> extends Type<T> {
   predicate: Predicate<T>;
 }
 
-function getDefaultRefineName<T>(type: Type<T>, predicate: Predicate<T>): string {
+export function getDefaultRefinementName<T>(type: Type<T>, predicate: Predicate<T>): string {
   return `(${getTypeName(type)} | ${getFunctionName(predicate)})`
 }
 
@@ -445,7 +445,7 @@ export function refinement<T>(type: Type<T>, predicate: Predicate<T>, name?: str
   return {
     kind: 'refinement',
     predicate,
-    name: name || getDefaultRefineName(type, predicate),
+    name: name || getDefaultRefinementName(type, predicate),
     validate: (v, c) => {
       return either.chain(
         t => predicate(t) ? either.right(t) : createValidationResult(v, c),
@@ -478,7 +478,7 @@ export interface $KeysType<P> extends Type<$Keys<P>> {
   type: ObjectType<P>;
 }
 
-function getDefault$KeysName<P: Props>(type: ObjectType<P>): string {
+export function getDefault$KeysName<P: Props>(type: ObjectType<P>): string {
   return `$Keys<${type.name}>`
 }
 
@@ -506,7 +506,7 @@ export interface $ExactType<P: Props> extends Type<$Exact<$ObjMap<P, <T>(v: Type
   props: P;
 }
 
-function getDefault$ExactName(props: Props): string {
+export function getDefault$ExactName(props: Props): string {
   return `$Exact<${getDefaultObjectName(props)}>`
 }
 
@@ -540,7 +540,7 @@ export interface $ShapeType<P> extends Type<$Shape<$ObjMap<P, <T>(v: Type<T>) =>
   type: ObjectType<P>;
 }
 
-function getDefault$ShapeName<P: Props>(type: ObjectType<P>): string {
+export function getDefault$ShapeName<P: Props>(type: ObjectType<P>): string {
   return `$Shape<${type.name}>`
 }
 
@@ -582,7 +582,7 @@ export interface ObjectType<P: Props> extends Type<$ObjMap<P, <T>(v: Type<T>) =>
   props: P;
 }
 
-function getDefaultObjectName(props: Props): string {
+export function getDefaultObjectName(props: Props): string {
   return `{ ${Object.keys(props).map(k => `${k}: ${props[k].name}`).join(', ')} }`
 }
 
