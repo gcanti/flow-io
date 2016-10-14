@@ -532,6 +532,46 @@ export function $exact<P: Props>(props: P, name?: string): $ExactType<P> {
 }
 
 //
+// $Shape
+//
+
+export interface $ShapeType<P> extends Type<$Shape<$ObjMap<P, <T>(v: Type<T>) => T>>> {
+  kind: '$shape';
+  type: ObjectType<P>;
+}
+
+function getDefault$ShapeName<P: Props>(type: ObjectType<P>): string {
+  return `$Shape<${type.name}>`
+}
+
+export function $shape<P: Props>(type: ObjectType<P>, name?: string): $ShapeType<P> {
+  const props = type.props
+  return {
+    kind: '$shape',
+    type,
+    name: name || getDefault$ShapeName(type),
+    validate: (v, c) => {
+      return either.chain(o => {
+        const errors = []
+        for (let prop in props) {
+          const type = props[prop]
+          const validation = type.validate(o[prop], c.concat(createContextEntry(prop, type)))
+          if (either.isLeft(validation)) {
+            Array.prototype.push.apply(errors, either.fromLeft(validation))
+          }
+        }
+        for (let k in o) {
+          if (!props.hasOwnProperty(k)) {
+            errors.push(createValidationError(v, c.concat(createContextEntry(k, nil))))
+          }
+        }
+        return errors.length ? either.left(errors) : either.right(o)
+      }, obj.validate(v, c))
+    }
+  }
+}
+
+//
 // objects
 //
 
