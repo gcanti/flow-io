@@ -112,7 +112,7 @@ export interface LiteralType<T> extends Type<T> {
   value: T;
 }
 
-export function literal<T: string | number | boolean, O: { value: T }>(o: O): LiteralType<$PropertyType<O, 'value'>> { // eslint-disable-line no-unused-vars
+export function literal<T: string | number | boolean, O: $Exact<{ value: T }>>(o: O): LiteralType<$PropertyType<O, 'value'>> { // eslint-disable-line no-unused-vars
   const value = o.value
   return {
     kind: 'literal',
@@ -526,7 +526,7 @@ export function $exact<P: Props>(props: P, name?: string): $ExactType<P> {
         const errors = []
         for (let k in o) {
           if (!props.hasOwnProperty(k)) {
-            errors.push(createValidationError(v, c.concat(createContextEntry(k, nil))))
+            errors.push(createValidationError(o[k], c.concat(createContextEntry(k, nil))))
           }
         }
         return errors.length ? either.left(errors) : either.right(unsafeCoerce(o))
@@ -558,15 +558,17 @@ export function $shape<P: Props>(type: ObjectType<P>, name?: string): $ShapeType
       return either.chain(o => {
         const errors = []
         for (let prop in props) {
-          const type = props[prop]
-          const validation = type.validate(o[prop], c.concat(createContextEntry(prop, type)))
-          if (either.isLeft(validation)) {
-            Array.prototype.push.apply(errors, either.fromLeft(validation))
+          if (o.hasOwnProperty(prop)) {
+            const type = props[prop]
+            const validation = type.validate(o[prop], c.concat(createContextEntry(prop, type)))
+            if (either.isLeft(validation)) {
+              Array.prototype.push.apply(errors, either.fromLeft(validation))
+            }
           }
         }
         for (let k in o) {
           if (!props.hasOwnProperty(k)) {
-            errors.push(createValidationError(v, c.concat(createContextEntry(k, nil))))
+            errors.push(createValidationError(o[k], c.concat(createContextEntry(k, nil))))
           }
         }
         return errors.length ? either.left(errors) : either.right(o)
