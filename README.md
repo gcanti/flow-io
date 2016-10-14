@@ -74,6 +74,7 @@ const ageType: Type<number> = Person.props.age
 | generic object | `Object` | `obj` |
 | function | `Function` | `fun` |
 | class `C` | `C` | `instanceOf(C)` |
+| array | `Array<A>` | `array(A)` |
 | intersection | `A & B` | `intersection([A, B])` |
 | literal | `'s'` | `literal({ value: 's' })` |
 | maybe | `?A` | `maybe(A)` |

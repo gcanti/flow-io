@@ -1,6 +1,6 @@
 {
   "name": "flow-runtime",
-  "version": "0.2.1",
+  "version": "0.1.0",
   "description": "Implementation of common algebraic types in JavaScript + Flow",
   "main": "lib/index.js",
   "files": [
