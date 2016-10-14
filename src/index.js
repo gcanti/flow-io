@@ -477,7 +477,7 @@ export function refinement<T>(type: Type<T>, predicate: Predicate<T>, name?: str
 // recursive types
 //
 
-export function recursion<T>(name: string, definition: (self: Type<T>) => Type<T>): Type<T> {
+export function recursion<T, R: Type<T>>(name: string, definition: (self: Type<T>) => R): R {
   const Self = {
     name,
     validate: (v, c) => Result.validate(v, c)
