@@ -5,6 +5,10 @@ import type { Either } from 'flow-static-land/lib/Either'
 import * as either from 'flow-static-land/lib/Either'
 import { unsafeCoerce } from 'flow-static-land/lib/Unsafe'
 
+type ExtractType<T, RT: Type<T>> = T; // eslint-disable-line no-unused-vars
+
+export type TypeOf<RT> = ExtractType<*, RT>;
+
 export type ContextEntry = {
   key: string,
   name: string
