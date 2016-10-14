@@ -331,7 +331,7 @@ export function tuple(types: Array<Type<*>>, name?: string): TupleType<*, *> {  
     validate: (v, c) => {
       return either.chain(a => {
         const errors = []
-        for (let i = 0, len = a.length; i < len; i++) {
+        for (let i = 0, len = types.length; i < len; i++) {
           const type = types[i]
           const validation = type.validate(a[i], c.concat(createContextEntry(String(i), type)))
           if (either.isLeft(validation)) {
