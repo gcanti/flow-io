@@ -54,6 +54,15 @@ t.check(JSON.parse('{"name":"Giulio"}'), Person)
 t.validate(JSON.parse('{"name":"Giulio"}'), Person)
 ```
 
+# Runtime type introspection
+
+Runtime types can be inspected
+
+```js
+const nameType: Type<string> = Person.props.name
+const ageType: Type<number> = Person.props.age
+```
+
 # Implemented types / combinators
 
 | Type | Flow syntax | Runtime type / combinator |
