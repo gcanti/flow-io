@@ -26,9 +26,7 @@ The type `T` can be extracted from a runtime type
 
 ```js
 import * as t from 'flow-runtime'
-
-type ExtractType<A, TA: Type<A>> = A;
-type TypeOf<T> = ExtractType<*, T>;
+import type { TypeOf } from 'flow-runtime'
 
 const Person = t.object({
   name: t.string,
