@@ -18,7 +18,7 @@ function isString(v: mixed) /* : boolean %checks */ {
 
 export const string: Type<string> = {
   name: 'string',
-  validate: (v, c) => isString(v) ? either.right(v) : createValidationError(v, c)
+  validate: (v, c) => isString(v) ? ...
 }
 ```
 
@@ -49,7 +49,30 @@ t.check(JSON.parse('{"name":"Giulio","age":43}'), Person)
 // throws Invalid value undefined supplied to : { name: string, age: number }/age: number
 t.check(JSON.parse('{"name":"Giulio"}'), Person)
 
-// doesn't throw, returns a data structure containig
+// doesn't throw, returns a data structure containing
 // the validation errors
 t.validate(JSON.parse('{"name":"Giulio"}'), Person)
 ```
+
+# Implemented types / combinators
+
+| Type | Flow syntax | Runtime type / combinator |
+|------|-------|-------------|
+| string | `string` | `string` |
+| number | `number` | `number` |
+| boolean | `boolean` | `boolean` |
+| generic array | `Array<any>` | `arr` |
+| generic object | `Object` | `obj` |
+| function | `Function` | `fun` |
+| class `C` | `C` | `instanceOf(C)` |
+| intersection | `A & B` | `intersection([A, B])` |
+| literal | `'s'` | `literal({ value: 's' })` |
+| maybe | `?A` | `maybe(A)` |
+| map | `{ [key: A]: B }` | `map(A, B)` |
+| refinement | ✘ | `refinement(A, predicateOnA)` |
+| object | `{ name: string }` | `object({ name: string })` |
+| tuple | `[A, B]` | `tuple([A, B])` |
+| union | `A | B` | `union([A, B])` |
+| $Keys | `$Keys<A>` | `$keys(A)` |
+| $Exact | `{| name: string |}` | `$exact({ name: string })` |
+| $Shape | `$Shape<A>` | `$shape(A)` |
