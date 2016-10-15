@@ -240,16 +240,16 @@ export const fun: IrreducibleType<Function> = {
 // arrays
 //
 
-export interface ArrayType<T> extends Type<Array<T>> {
+export interface ArrayType<RT, T> extends Type<Array<T>> {
   kind: 'array';
-  type: Type<T>;
+  type: RT;
 }
 
 export function getDefaultListName<T>(type: Type<T>): string {
   return `Array<${getTypeName(type)}>`
 }
 
-export function array<T>(type: Type<T>, name?: string): ArrayType<T> {
+export function array<T, RT: Type<T>>(type: RT, name?: string): ArrayType<RT, T> {
   return {
     kind: 'array',
     type,
@@ -385,16 +385,16 @@ export function intersection(types: Array<Type<*>>, name?: string): Intersection
 // maybes
 //
 
-export interface MaybeType<T> extends Type<?T> {
+export interface MaybeType<RT, T> extends Type<?T> {
   kind: 'maybe';
-  type: Type<T>;
+  type: RT;
 }
 
 export function getDefaultMaybeName<T>(type: Type<T>): string {
   return `?${getTypeName(type)}`
 }
 
-export function maybe<T>(type: Type<T>, name?: string): MaybeType<T> {
+export function maybe<T, RT: Type<T>>(type: RT, name?: string): MaybeType<RT, T> {
   return {
     kind: 'maybe',
     type,
@@ -409,17 +409,17 @@ export function maybe<T>(type: Type<T>, name?: string): MaybeType<T> {
 // map objects
 //
 
-export interface MapType<D, C> extends Type<{ [key: D]: C }> {
+export interface MapType<TD, TC, D, C> extends Type<{ [key: D]: C }> {
   kind: 'map';
-  domain: Type<D>;
-  codomain: Type<C>;
+  domain: TD;
+  codomain: TC;
 }
 
 export function getDefaultMapName<D, C>(domain: Type<D>, codomain: Type<C>): string {
   return `{ [key: ${getTypeName(domain)}]: ${getTypeName(codomain)} }`
 }
 
-export function map<D, C>(domain: Type<D>, codomain: Type<C>, name?: string): MapType<D, C> {
+export function map<D, C, TD: Type<D>, TC: Type<C>>(domain: TD, codomain: TC, name?: string): MapType<TD, TC, D, C> {
   return {
     kind: 'map',
     domain,
@@ -450,8 +450,9 @@ export function map<D, C>(domain: Type<D>, codomain: Type<C>, name?: string): Ma
 
 export type Predicate<T> = (value: T) => boolean;
 
-export interface RefinementType<T> extends Type<T> {
+export interface RefinementType<RT, T> extends Type<T> {
   kind: 'refinement';
+  type: RT;
   predicate: Predicate<T>;
 }
 
@@ -459,9 +460,10 @@ export function getDefaultRefinementName<T>(type: Type<T>, predicate: Predicate<
   return `(${getTypeName(type)} | ${getFunctionName(predicate)})`
 }
 
-export function refinement<T>(type: Type<T>, predicate: Predicate<T>, name?: string): RefinementType<T> {
+export function refinement<T, RT: Type<T>>(type: RT, predicate: Predicate<T>, name?: string): RefinementType<RT, T> {
   return {
     kind: 'refinement',
+    type,
     predicate,
     name: name || getDefaultRefinementName(type, predicate),
     validate: (v, c) => {
