@@ -70,8 +70,9 @@ const ageType: Type<number> = Person.props.age
 | boolean | `boolean` | `boolean` |
 | generic array | `Array<any>` | `arr` |
 | generic object | `Object` | `obj` |
-| function | `Function` | `fun` |
-| class `C` | `C` | `instanceOf(C)` |
+| generic function | `Function` | `fun` |
+| instance of `C` | `C` | `instanceOf(C)` |
+| class of `C` | `Class<C>` | `classOf(C)` |
 | array | `Array<A>` | `array(A)` |
 | intersection | `A & B` | `intersection([A, B])` |
 | literal | `'s'` | `literal({ value: 's' })` |
@@ -84,3 +85,4 @@ const ageType: Type<number> = Person.props.age
 | $Keys | `$Keys<A>` | `$keys(A)` |
 | $Exact | `{| name: string |}` | `$exact({ name: string })` |
 | $Shape | `$Shape<A>` | `$shape(A)` |
+| function | `(a: A) => B` | ✘ |

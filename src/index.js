@@ -64,8 +64,15 @@ function getDefaultContext<T>(type: Type<T>): Context {
   return [{ key: '', name: type.name }]
 }
 
+function stringify(x: mixed): string {
+  if (isFunction(x)) {
+    return getFunctionName(x)
+  }
+  return JSON.stringify(x)
+}
+
 function getErrorDescription(value: mixed, context: Context): string {
-  return `Invalid value ${JSON.stringify(value)} supplied to ${context.map(({ key, name }) => `${key}: ${name}`).join('/')}`
+  return `Invalid value ${stringify(value)} supplied to ${context.map(({ key, name }) => `${key}: ${name}`).join('/')}`
 }
 
 function createValidationError(value: mixed, context: Context): ValidationError {
@@ -139,20 +146,43 @@ export function literal<T: string | number | boolean, O: $Exact<{ value: T }>>(o
 }
 
 //
+// class instances
+//
+
+export interface InstanceOfType<T> extends Type<T> {
+  kind: 'instanceOf';
+  ctor: Class<T>;
+}
+
+export function instanceOf<T>(ctor: Class<T>, name?: string): InstanceOfType<T> {
+  return {
+    kind: 'instanceOf',
+    ctor,
+    name: name || getFunctionName(ctor),
+    validate: (v, c) => v instanceof ctor ? either.right(v) : createValidationResult(v, c)
+  }
+}
+
+//
 // classes
 //
 
-export interface ClassType<T> extends Type<T> {
+export interface ClassType<T> extends Type<Class<T>> {
   kind: 'class';
   ctor: Class<T>;
 }
 
-export function instanceOf<T>(ctor: Class<T>, name?: string): ClassType<T> {
+function getDefaultClassOfName<T>(ctor: Class<T>): string {
+  return `Class<${getFunctionName(ctor)}>`
+}
+
+export function classOf<T>(ctor: Class<T>, name?: string): ClassType<T> {
+  const type = refinement(fun, f => f === ctor || f.prototype instanceof ctor, name)
   return {
     kind: 'class',
     ctor,
-    name: name || getFunctionName(ctor),
-    validate: (v, c) => v instanceof ctor ? either.right(v) : createValidationResult(v, c)
+    name: name || getDefaultClassOfName(ctor),
+    validate: (v, c) => type.validate(v, c)
   }
 }
 

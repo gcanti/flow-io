@@ -28,7 +28,7 @@ const RTI1 = t.number
 ;(RTI1.name: string)
 
 //
-// classes
+// instanceOf
 //
 
 class A {}
@@ -348,3 +348,22 @@ const RTI15 = t.object({
 // TODO why the following lines don't type check?
 // ;(RTI15.props.b.props.d: ObjectType<Props>)
 // ;(RTI15.props.b.props.d.props.e: Type<number>)
+
+//
+// classOf
+//
+
+const T16: Type<Class<A>> = t.classOf(A)
+const vr16 = t.validate(A, T16)
+if (either.isRight(vr16)) {
+  const v16 = either.fromRight(vr16)
+  ;(v16: Class<A>)
+  // $ExpectError
+  ;(v16: string)
+}
+
+// runtime type introspection
+const RTI16 = t.classOf(A)
+;(RTI16.name: string)
+;(RTI16.ctor: Class<A>)
+
