@@ -270,7 +270,7 @@ export const fun: IrreducibleType<Function> = {
 // arrays
 //
 
-export interface ArrayType<RT, T> extends Type<Array<T>> {
+export interface ArrayType<RT> extends Type<Array<TypeOf<RT>>> {
   kind: 'array';
   type: RT;
 }
@@ -279,7 +279,7 @@ export function getDefaultListName<T>(type: Type<T>): string {
   return `Array<${getTypeName(type)}>`
 }
 
-export function array<T, RT: Type<T>>(type: RT, name?: string): ArrayType<RT, T> {
+export function array<RT: Type<any>>(type: RT, name?: string): ArrayType<RT> {
   return {
     kind: 'array',
     type,
@@ -308,7 +308,7 @@ export interface UnionType<TS, T> extends Type<T> {
   types: TS;
 }
 
-export function getDefaultUnionName(types: Array<Type<*>>): string {
+export function getDefaultUnionName(types: Array<Type<any>>): string {
   return `(${types.map(getTypeName).join(' | ')})`
 }
 
@@ -317,7 +317,7 @@ declare function union<A, B, C, D, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Ty
 declare function union<A, B, C, TA: Type<A>, TB: Type<B>, TC: Type<C>, TS: [TA, TB, TC]>(types: TS, name?: string) : UnionType<TS, A | B | C>; // eslint-disable-line no-redeclare
 declare function union<A, B, TA: Type<A>, TB: Type<B>, TS: [TA, TB]>(types: TS, name?: string) : UnionType<TS, A | B>; // eslint-disable-line no-redeclare
 
-export function union(types: Array<Type<*>>, name?: string): UnionType<*, *> {  // eslint-disable-line no-redeclare
+export function union<TS: Array<Type<any>>>(types: TS, name?: string): UnionType<TS, *> {  // eslint-disable-line no-redeclare
   return {
     kind: 'union',
     types,
@@ -344,7 +344,7 @@ export interface TupleType<TS, T> extends Type<T> {
   types: TS;
 }
 
-export function getDefaultTupleName(types: Array<Type<*>>): string {
+export function getDefaultTupleName(types: Array<Type<any>>): string {
   return `[${types.map(getTypeName).join(', ')}]`
 }
 
@@ -353,7 +353,7 @@ declare function tuple<A, B, C, D, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Ty
 declare function tuple<A, B, C, TA: Type<A>, TB: Type<B>, TC: Type<C>, TS: [TA, TB, TC]>(types: TS, name?: string) : TupleType<TS, [A, B, C]>; // eslint-disable-line no-redeclare
 declare function tuple<A, B, TA: Type<A>, TB: Type<B>, TS: [TA, TB]>(types: TS, name?: string) : TupleType<TS, [A, B]>; // eslint-disable-line no-redeclare
 
-export function tuple(types: Array<Type<*>>, name?: string): TupleType<*, *> {  // eslint-disable-line no-redeclare
+export function tuple<TS: Array<Type<any>>>(types: TS, name?: string): TupleType<TS, *> {  // eslint-disable-line no-redeclare
   return {
     kind: 'tuple',
     types,
@@ -383,7 +383,7 @@ export interface IntersectionType<TS, T> extends Type<T> {
   types: TS;
 }
 
-export function getDefaultIntersectionName(types: Array<Type<*>>): string {
+export function getDefaultIntersectionName(types: Array<Type<any>>): string {
   return `(${types.map(getTypeName).join(' & ')})`
 }
 
@@ -392,7 +392,7 @@ declare function intersection<A, B, C, D, TA: Type<A>, TB: Type<B>, TC: Type<C>,
 declare function intersection<A, B, C, TA: Type<A>, TB: Type<B>, TC: Type<C>, TS: [TA, TB, TC]>(types: TS, name?: string) : IntersectionType<TS, A & B & C>; // eslint-disable-line no-redeclare
 declare function intersection<A, B, TA: Type<A>, TB: Type<B>, TS: [TA, TB]>(types: TS, name?: string) : IntersectionType<TS, A & B>; // eslint-disable-line no-redeclare
 
-export function intersection(types: Array<Type<*>>, name?: string): IntersectionType<*, *> {  // eslint-disable-line no-redeclare
+export function intersection<TS: Array<Type<any>>>(types: TS, name?: string): IntersectionType<TS, *> {  // eslint-disable-line no-redeclare
   return {
     kind: 'intersection',
     types,
@@ -415,7 +415,7 @@ export function intersection(types: Array<Type<*>>, name?: string): Intersection
 // maybes
 //
 
-export interface MaybeType<RT, T> extends Type<?T> {
+export interface MaybeType<RT> extends Type<?TypeOf<RT>> {
   kind: 'maybe';
   type: RT;
 }
@@ -424,7 +424,7 @@ export function getDefaultMaybeName<T>(type: Type<T>): string {
   return `?${getTypeName(type)}`
 }
 
-export function maybe<T, RT: Type<T>>(type: RT, name?: string): MaybeType<RT, T> {
+export function maybe<RT: Type<any>>(type: RT, name?: string): MaybeType<RT> {
   return {
     kind: 'maybe',
     type,
@@ -439,17 +439,17 @@ export function maybe<T, RT: Type<T>>(type: RT, name?: string): MaybeType<RT, T>
 // map objects
 //
 
-export interface MapType<TD, TC, D, C> extends Type<{ [key: D]: C }> {
+export interface MapType<RTD, RTC> extends Type<{ [key: TypeOf<RTD>]: TypeOf<RTC> }> {
   kind: 'map';
-  domain: TD;
-  codomain: TC;
+  domain: RTD;
+  codomain: RTC;
 }
 
 export function getDefaultMapName<D, C>(domain: Type<D>, codomain: Type<C>): string {
   return `{ [key: ${getTypeName(domain)}]: ${getTypeName(codomain)} }`
 }
 
-export function map<D, C, TD: Type<D>, TC: Type<C>>(domain: TD, codomain: TC, name?: string): MapType<TD, TC, D, C> {
+export function map<RTD: Type<any>, RTC: Type<any>>(domain: RTD, codomain: RTC, name?: string): MapType<RTD, RTC> {
   return {
     kind: 'map',
     domain,
@@ -480,17 +480,17 @@ export function map<D, C, TD: Type<D>, TC: Type<C>>(domain: TD, codomain: TC, na
 
 export type Predicate<T> = (value: T) => boolean;
 
-export interface RefinementType<RT, T> extends Type<T> {
+export interface RefinementType<RT> extends Type<TypeOf<RT>> {
   kind: 'refinement';
   type: RT;
-  predicate: Predicate<T>;
+  predicate: Predicate<TypeOf<RT>>;
 }
 
 export function getDefaultRefinementName<T>(type: Type<T>, predicate: Predicate<T>): string {
   return `(${getTypeName(type)} | ${getFunctionName(predicate)})`
 }
 
-export function refinement<T, RT: Type<T>>(type: RT, predicate: Predicate<T>, name?: string): RefinementType<RT, T> {
+export function refinement<RT: Type<any>>(type: RT, predicate: Predicate<TypeOf<RT>>, name?: string): RefinementType<RT> {
   return {
     kind: 'refinement',
     type,
@@ -509,7 +509,7 @@ export function refinement<T, RT: Type<T>>(type: RT, predicate: Predicate<T>, na
 // recursive types
 //
 
-export function recursion<T, R: Type<T>>(name: string, definition: (self: Type<T>) => R): R {
+export function recursion<T, RT: Type<T>>(name: string, definition: (self: Type<T>) => RT): RT {
   const Self = {
     name,
     validate: (v, c) => Result.validate(v, c)
@@ -523,7 +523,7 @@ export function recursion<T, R: Type<T>>(name: string, definition: (self: Type<T
 // $Keys
 //
 
-export interface $KeysType<P> extends Type<$Keys<P>> {
+export interface $KeysType<P: Props> extends Type<$Keys<P>> {
   kind: '$keys';
   type: ObjectType<P>;
 }
@@ -580,7 +580,7 @@ export function $exact<P: Props>(props: P, name?: string): $ExactType<P> {
 // $Shape
 //
 
-export interface $ShapeType<P> extends Type<$Shape<$ObjMap<P, <T>(v: Type<T>) => T>>> {
+export interface $ShapeType<P: Props> extends Type<$Shape<$ObjMap<P, <T>(v: Type<T>) => T>>> {
   kind: '$shape';
   type: ObjectType<P>;
 }
