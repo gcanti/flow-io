@@ -343,11 +343,9 @@ const RTI15 = t.object({
 ;(RTI15.name: string)
 ;(RTI15.props: Props)
 ;(RTI15.props.a: Type<number>)
-;(RTI15.props.b: ObjectType<Props>)
 ;(RTI15.props.b.props.c: Type<string>)
-// TODO why the following lines don't type check?
-// ;(RTI15.props.b.props.d: ObjectType<Props>)
-// ;(RTI15.props.b.props.d.props.e: Type<number>)
+;(RTI15.props.b.props.d: ObjectType<Props>)
+;(RTI15.props.b.props.d.props.e: Type<number>)
 
 //
 // classOf
