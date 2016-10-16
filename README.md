@@ -9,6 +9,15 @@ interface Type<T> {
 }
 ```
 
+where `Context` and `ValidationResut<T>` are defined as
+
+```js
+type ContextEntry = { key: string, name: string };
+type Context = Array<ContextEntry>;
+type ValidationError = { value: mixed, context: Context, description: string };
+type ValidationResult<T> = Either<Array<ValidationError>, T>;
+```
+
 For example the runtime type representing the type `string` is
 
 ```js
@@ -48,8 +57,11 @@ t.check(JSON.parse('{"name":"Giulio","age":43}'), Person)
 t.check(JSON.parse('{"name":"Giulio"}'), Person)
 
 // doesn't throw, returns a data structure containing
-// the validation errors
-t.validate(JSON.parse('{"name":"Giulio"}'), Person)
+// the validation errors (Either<)
+const validation = t.validate(JSON.parse('{"name":"Giulio"}'), Person)
+if (t.either.isRight(validation)) {
+  const person: PersonT = t.either.fromRight(validation)
+}
 ```
 
 # Runtime type introspection

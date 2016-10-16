@@ -1,7 +1,7 @@
 // @flow
 
 import assert from 'assert'
-import * as either from 'flow-static-land/lib/Either'
+import { either } from '../src/index'
 import type { ValidationResult } from '../src/index'
 
 export function assertValidationSuccess<T>(validation: ValidationResult<T>): void {

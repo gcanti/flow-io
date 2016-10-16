@@ -5,9 +5,24 @@ import type { Either } from 'flow-static-land/lib/Either'
 import * as either from 'flow-static-land/lib/Either'
 import { unsafeCoerce } from 'flow-static-land/lib/Unsafe'
 
+//
+// re-export Either
+//
+
+export type { Either }
+export { either }
+
+//
+// type extractor
+//
+
 type ExtractType<T, RT: Type<T>> = T; // eslint-disable-line no-unused-vars
 
 export type TypeOf<RT> = ExtractType<*, RT>;
+
+//
+// `Type` type class
+//
 
 export type ContextEntry = {
   key: string,
@@ -28,6 +43,10 @@ export interface Type<T> {
   name: string;
   validate: (value: mixed, context: Context) => ValidationResult<T>;
 }
+
+//
+// core APIs
+//
 
 export function validate<T>(value: mixed, type: Type<T>): ValidationResult<T> {
   return type.validate(value, getDefaultContext(type))
@@ -560,6 +579,7 @@ export function getDefault$ExactName(props: Props): string {
   return `$Exact<${getDefaultObjectName(props)}>`
 }
 
+// accepts props instead of a generic type because of https://github.com/facebook/flow/issues/2626
 export function $exact<P: Props>(props: P, name?: string): $ExactType<P> {
   name = name || getDefault$ExactName(props)
   const type = object(props, name)
