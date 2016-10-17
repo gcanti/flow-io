@@ -4,6 +4,7 @@ declare var describe: (title: string, f: () => void) => void;
 declare var it: (title: string, f: () => void) => void;
 
 import * as t from '../src/index'
+import assert from 'assert'
 import { assertValidationFailure, assertValidationSuccess } from './helpers'
 
 describe('array', () => {
@@ -12,6 +13,12 @@ describe('array', () => {
     const T = t.array(t.number)
     assertValidationSuccess(t.validate([], T))
     assertValidationSuccess(t.validate([1, 2, 3], T))
+  })
+
+  it('should return the same reference if validation succeeded', () => {
+    const T = t.array(t.number)
+    const value = [1, 2, 3]
+    assert.strictEqual(t.either.fromRight(t.validate(value, T)), value)
   })
 
   it('should fail validating an invalid value', () => {

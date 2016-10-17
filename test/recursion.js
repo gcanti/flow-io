@@ -4,6 +4,7 @@ declare var describe: (title: string, f: () => void) => void;
 declare var it: (title: string, f: () => void) => void;
 
 import * as t from '../src/index'
+import assert from 'assert'
 import { assertValidationFailure, assertValidationSuccess } from './helpers'
 
 describe('recursion', () => {
@@ -15,6 +16,15 @@ describe('recursion', () => {
     }))
     assertValidationSuccess(t.validate({ a: 1 }, T))
     assertValidationSuccess(t.validate({ a: 1, b: { a: 2 } }, T))
+  })
+
+  it('should return the same reference if validation succeeded', () => {
+    const T = t.recursion('T', self => t.object({
+      a: t.number,
+      b: t.maybe(self)
+    }))
+    const value = { a: 1, b: { a: 2 } }
+    assert.strictEqual(t.either.fromRight(t.validate(value, T)), value)
   })
 
   it('should fail validating an invalid value', () => {
