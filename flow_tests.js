@@ -5,9 +5,9 @@ import type {
   Predicate,
   Props,
   ObjectType
-} from '../src/index'
+} from './src/index'
 
-import * as t from '../src/index'
+import * as t from './src/index'
 
 //
 // irreducibles
@@ -128,6 +128,12 @@ const RTI6 = t.tuple([t.string, t.object({ a: t.number })])
 //
 // intersections
 //
+
+// $ExpectError
+t.intersection()
+
+// $ExpectError
+t.intersection([])
 
 const T7: Type<{ a: number } & { b: number }> = t.intersection([t.object({ a: t.number }), t.object({ b: t.number })])
 const vr7 = t.validate({ a: 1, b: 2 }, T7)
