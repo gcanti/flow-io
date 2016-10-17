@@ -80,7 +80,7 @@ const ageType: Type<number> = Person.props.age
 | string | `string` | `string` |
 | number | `number` | `number` |
 | boolean | `boolean` | `boolean` |
-| generic array | `Array<any>` | `arr` |
+| generic array | `Array<mixed>` | `arr` |
 | generic object | `Object` | `obj` |
 | generic function | `Function` | `fun` |
 | instance of `C` | `C` | `instanceOf(C)` |
