@@ -124,8 +124,12 @@ export function success<T>(value: T): ValidationResult<T> {
   return either.right(value)
 }
 
+export function validateWithContext<T>(value: mixed, context: Context, type: Type<T>): ValidationResult<T> {
+  return type.validate(value, context)
+}
+
 export function validate<T>(value: mixed, type: Type<T>): ValidationResult<T> {
-  return type.validate(value, getDefaultContext(type))
+  return validateWithContext(value, getDefaultContext(type), type)
 }
 
 export function is<T>(value: mixed, type: Type<T>): boolean {
