@@ -39,40 +39,12 @@ export type ValidationError = {
 
 export type ValidationResult<T> = Either<Array<ValidationError>, T>;
 
+export type Validation<T> = (value: mixed, context: Context) => ValidationResult<T>;
+
 export interface Type<T> {
   name: string;
   // validate MUST return `value` if validation succeeded
-  validate: (value: mixed, context: Context) => ValidationResult<T>;
-}
-
-//
-// core APIs
-//
-
-export function validate<T>(value: mixed, type: Type<T>): ValidationResult<T> {
-  return type.validate(value, getDefaultContext(type))
-}
-
-export function is<T>(value: mixed, type: Type<T>): boolean {
-  return either.isRight(validate(value, type))
-}
-
-export function fail(message: string): void {
-  throw new TypeError(`[flow-runtime failure]\n${message}`)
-}
-
-export function assert(guard: boolean, message?: () => string): void {
-  if (guard !== true) {
-    fail(message ? message() : 'Assert failed (turn on "Pause on exceptions" in your Source panel)')
-  }
-}
-
-export function check<T>(value: mixed, type: Type<T>): void {
-  const validation = validate(value, type)
-  if (either.isLeft(validation)) {
-    const errors = either.fromLeft(validation)
-    fail(errors.map(e => e.description).join('\n'))
-  }
+  validate: Validation<T>;
 }
 
 //
@@ -103,19 +75,11 @@ function createValidationError(value: mixed, context: Context): ValidationError 
   }
 }
 
-function createFailure<T>(value: mixed, context: Context): ValidationResult<T> {
-  return either.left([createValidationError(value, context)])
-}
-
 function createContextEntry<T>(key: string, type: Type<T>): ContextEntry {
   return {
     key,
     name: type.name
   }
-}
-
-export function getTypeName<T>(type: Type<T>): string {
-  return type.name
 }
 
 function getFunctionName(f: Function): string {
@@ -145,6 +109,48 @@ function checkAdditionalProps(props: Props, o: Object, c: Context): Array<Valida
 }
 
 //
+// API
+//
+
+export function getTypeName<T>(type: Type<T>): string {
+  return type.name
+}
+
+export function failure<T>(value: mixed, context: Context): ValidationResult<T> {
+  return either.left([createValidationError(value, context)])
+}
+
+export function success<T>(value: T): ValidationResult<T> {
+  return either.right(value)
+}
+
+export function validate<T>(value: mixed, type: Type<T>): ValidationResult<T> {
+  return type.validate(value, getDefaultContext(type))
+}
+
+export function is<T>(value: mixed, type: Type<T>): boolean {
+  return either.isRight(validate(value, type))
+}
+
+export function crash(message: string): void {
+  throw new TypeError(`[flow-runtime failure]\n${message}`)
+}
+
+export function assert(guard: boolean, message?: () => string): void {
+  if (guard !== true) {
+    crash(message ? message() : 'Assert failed (turn on "Pause on exceptions" in your Source panel)')
+  }
+}
+
+export function check<T>(value: mixed, type: Type<T>): void {
+  const validation = validate(value, type)
+  if (either.isLeft(validation)) {
+    const errors = either.fromLeft(validation)
+    crash(errors.map(e => e.description).join('\n'))
+  }
+}
+
+//
 // literals
 //
 
@@ -160,7 +166,7 @@ export function literal<T: string | number | boolean, O: $Exact<{ value: T }>>(o
     value,
     name: JSON.stringify(value),
     validate: (v, c) => {
-      return v === value ? either.right(value) : createFailure(v, c)
+      return v === value ? success(value) : failure(v, c)
     }
   }
 }
@@ -179,7 +185,7 @@ export function instanceOf<T>(ctor: Class<T>, name?: string): InstanceOfType<T> 
     kind: 'instanceOf',
     ctor,
     name: name || getFunctionName(ctor),
-    validate: (v, c) => v instanceof ctor ? either.right(v) : createFailure(v, c)
+    validate: (v, c) => v instanceof ctor ? success(v) : failure(v, c)
   }
 }
 
@@ -192,7 +198,7 @@ export interface ClassType<T> extends Type<Class<T>> {
   ctor: Class<T>;
 }
 
-function getDefaultClassOfName<T>(ctor: Class<T>): string {
+export function getDefaultClassOfName<T>(ctor: Class<T>): string {
   return `Class<${getFunctionName(ctor)}>`
 }
 
@@ -221,13 +227,13 @@ function isNil(v: mixed) /* : boolean %checks */ {
 export const nil: IrreducibleType<void | null> = {
   kind: 'irreducible',
   name: 'nil',
-  validate: (v, c) => isNil(v) ? either.right(v) : createFailure(v, c)
+  validate: (v, c) => isNil(v) ? success(v) : failure(v, c)
 }
 
 export const any: IrreducibleType<any> = {
   kind: 'irreducible',
   name: 'any',
-  validate: (v, c) => either.right(v) // eslint-disable-line no-unused-vars
+  validate: (v, c) => success(v) // eslint-disable-line no-unused-vars
 }
 
 function isString(v: mixed) /* : boolean %checks */ {
@@ -237,7 +243,7 @@ function isString(v: mixed) /* : boolean %checks */ {
 export const string: IrreducibleType<string> = {
   kind: 'irreducible',
   name: 'string',
-  validate: (v, c) => isString(v) ? either.right(v) : createFailure(v, c)
+  validate: (v, c) => isString(v) ? success(v) : failure(v, c)
 }
 
 function isNumber(v: mixed) /* : boolean %checks */ {
@@ -247,7 +253,7 @@ function isNumber(v: mixed) /* : boolean %checks */ {
 export const number: IrreducibleType<number> = {
   kind: 'irreducible',
   name: 'number',
-  validate: (v, c) => isNumber(v) ? either.right(v) : createFailure(v, c)
+  validate: (v, c) => isNumber(v) ? success(v) : failure(v, c)
 }
 
 function isBoolean(v: mixed) /* : boolean %checks */ {
@@ -257,13 +263,13 @@ function isBoolean(v: mixed) /* : boolean %checks */ {
 export const boolean: IrreducibleType<boolean> = {
   kind: 'irreducible',
   name: 'boolean',
-  validate: (v, c) => isBoolean(v) ? either.right(v) : createFailure(v, c)
+  validate: (v, c) => isBoolean(v) ? success(v) : failure(v, c)
 }
 
 export const arr: IrreducibleType<Array<mixed>> = {
   kind: 'irreducible',
   name: 'Array',
-  validate: (v, c) => Array.isArray(v) ? either.right(v) : createFailure(v, c)
+  validate: (v, c) => Array.isArray(v) ? success(v) : failure(v, c)
 }
 
 function isObject(v: mixed) /* : boolean %checks */ {
@@ -273,7 +279,7 @@ function isObject(v: mixed) /* : boolean %checks */ {
 export const obj: IrreducibleType<Object> = {
   kind: 'irreducible',
   name: 'Object',
-  validate: (v, c) => isObject(v) ? either.right(v) : createFailure(v, c)
+  validate: (v, c) => isObject(v) ? success(v) : failure(v, c)
 }
 
 function isFunction(v: mixed) /* : boolean %checks */ {
@@ -283,7 +289,7 @@ function isFunction(v: mixed) /* : boolean %checks */ {
 export const fun: IrreducibleType<Function> = {
   kind: 'irreducible',
   name: 'Function',
-  validate: (v, c) => isFunction(v) ? either.right(v) : createFailure(v, c)
+  validate: (v, c) => isFunction(v) ? success(v) : failure(v, c)
 }
 
 //
@@ -313,7 +319,7 @@ export function array<T, RT: Type<T>>(type: RT, name?: string): ArrayType<RT> { 
             pushAll(errors, either.fromLeft(validation))
           }
         }
-        return errors.length ? either.left(errors) : either.right(unsafeCoerce(a))
+        return errors.length ? either.left(errors) : success(unsafeCoerce(a))
       }, arr.validate(v, c))
     }
   }
@@ -349,7 +355,7 @@ export function union<TS: Array<Type<mixed>>>(types: TS, name?: string): UnionTy
           return validation
         }
       }
-      return createFailure(v, c)
+      return failure(v, c)
     }
   }
 }
@@ -387,7 +393,7 @@ export function tuple<TS: Array<Type<mixed>>>(types: TS, name?: string): TupleTy
             pushAll(errors, either.fromLeft(validation))
           }
         }
-        return errors.length ? either.left(errors) : either.right(a)
+        return errors.length ? either.left(errors) : success(a)
       }, arr.validate(v, c))
     }
   }
@@ -425,7 +431,7 @@ export function intersection<TS: Array<Type<mixed>>>(types: TS, name?: string): 
           pushAll(errors, either.fromLeft(validation))
         }
       }
-      return errors.length ? either.left(errors) : either.right(v)
+      return errors.length ? either.left(errors) : success(v)
     }
   }
 }
@@ -449,7 +455,7 @@ export function maybe<T, RT: Type<T>>(type: RT, name?: string): MaybeType<RT> { 
     type,
     name: name || getDefaultMaybeName(type),
     validate: (v, c) => {
-      return unsafeCoerce(isNil(v) ? either.right(v) : type.validate(v, c))
+      return unsafeCoerce(isNil(v) ? success(v) : type.validate(v, c))
     }
   }
 }
@@ -487,7 +493,7 @@ export function mapping<D, RTD: Type<D>, C, RTC: Type<C>>(domain: RTD, codomain:
             pushAll(errors, either.fromLeft(codomainValidation))
           }
         }
-        return errors.length ? either.left(errors) : either.right(o)
+        return errors.length ? either.left(errors) : success(o)
       }, obj.validate(v, c))
     }
   }
@@ -517,7 +523,7 @@ export function refinement<T, RT: Type<T>>(type: RT, predicate: Predicate<TypeOf
     name: name || getDefaultRefinementName(type, predicate),
     validate: (v, c) => {
       return either.chain(
-        t => predicate(t) ? either.right(t) : createFailure(v, c),
+        t => predicate(t) ? success(t) : failure(v, c),
         type.validate(v, c)
       )
     }
@@ -559,7 +565,7 @@ export function $keys<P: Props>(type: ObjectType<P>, name?: string): $KeysType<P
     name: name || getDefault$KeysName(type),
     validate: (v, c) => {
       return either.chain(
-        s => keys.hasOwnProperty(v) ? either.right(s) : createFailure(v, c),
+        s => keys.hasOwnProperty(v) ? success(s) : failure(v, c),
         string.validate(v, c)
       )
     }
@@ -590,7 +596,7 @@ export function $exact<P: Props>(props: P, name?: string): $ExactType<P> {
     validate: (v, c) => {
       return either.chain(o => {
         const errors = checkAdditionalProps(props, o, c)
-        return errors.length ? either.left(errors) : either.right(unsafeCoerce(o))
+        return errors.length ? either.left(errors) : success(unsafeCoerce(o))
       }, type.validate(v, c))
     }
   }
@@ -628,7 +634,7 @@ export function $shape<P: Props>(type: ObjectType<P>, name?: string): $ShapeType
           }
         }
         pushAll(errors, checkAdditionalProps(props, o, c))
-        return errors.length ? either.left(errors) : either.right(o)
+        return errors.length ? either.left(errors) : success(o)
       }, obj.validate(v, c))
     }
   }
@@ -664,7 +670,7 @@ export function object<P: Props>(props: P, name?: string): ObjectType<P> {
             pushAll(errors, either.fromLeft(validation))
           }
         }
-        return errors.length ? either.left(errors) : either.right(o)
+        return errors.length ? either.left(errors) : success(o)
       }, obj.validate(v, c))
     }
   }
