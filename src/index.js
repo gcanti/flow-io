@@ -9,8 +9,7 @@ import { unsafeCoerce } from 'flow-static-land/lib/Unsafe'
 // re-export flow-static-land tools
 //
 
-export type { Either }
-export { either, unsafeCoerce }
+export { either }
 
 //
 // type extractor
@@ -116,12 +115,51 @@ export function getTypeName<T>(type: Type<T>): string {
   return type.name
 }
 
+export function failures<T>(errors: Array<ValidationError>): ValidationResult<T> {
+  return either.left(errors)
+}
+
 export function failure<T>(value: mixed, context: Context): ValidationResult<T> {
   return either.left([createValidationError(value, context)])
 }
 
 export function success<T>(value: T): ValidationResult<T> {
   return either.right(value)
+}
+
+export function isFailure<T>(validation: ValidationResult<T>): boolean {
+  return either.isLeft(validation)
+}
+
+export function isSuccess<T>(validation: ValidationResult<T>): boolean {
+  return either.isRight(validation)
+}
+
+export function fromFailure<T>(validation: ValidationResult<T>): Array<ValidationError> {
+  return either.fromLeft(validation)
+}
+
+export function fromSuccess<T>(validation: ValidationResult<T>): T {
+  if (isFailure(validation)) {
+    crash(fromFailure(validation).map(e => e.description).join('\n'))
+  }
+  return either.fromRight(validation)
+}
+
+export function of<A>(a: A): ValidationResult<A> {
+  return either.of(a)
+}
+
+export function map<A, B>(validation: ValidationResult<A>, f: (a: A) => B): ValidationResult<B> {
+  return either.map(f, validation)
+}
+
+export function ap<A, B>(validation: ValidationResult<A>, f: ValidationResult<(a: A) => B>): ValidationResult<B> {
+  return either.ap(f, validation)
+}
+
+export function chain<A, B>(validation: ValidationResult<A>, f: (a: A) => ValidationResult<B>): ValidationResult<B> {
+  return either.chain(f, validation)
 }
 
 export function validateWithContext<T>(value: mixed, context: Context, type: Type<T>): ValidationResult<T> {
@@ -132,8 +170,12 @@ export function validate<T>(value: mixed, type: Type<T>): ValidationResult<T> {
   return validateWithContext(value, getDefaultContext(type), type)
 }
 
+export function unsafeValidate<T>(value: mixed, type: Type<T>): T {
+  return fromSuccess(validate(value, type))
+}
+
 export function is<T>(value: mixed, type: Type<T>): boolean {
-  return either.isRight(validate(value, type))
+  return isSuccess(validate(value, type))
 }
 
 export function crash(message: string): void {
@@ -143,14 +185,6 @@ export function crash(message: string): void {
 export function assert(guard: boolean, message?: () => string): void {
   if (guard !== true) {
     crash(message ? message() : 'Assert failed (turn on "Pause on exceptions" in your Source panel)')
-  }
-}
-
-export function unsafeValidate<T>(value: mixed, type: Type<T>): void {
-  const validation = validate(value, type)
-  if (either.isLeft(validation)) {
-    const errors = either.fromLeft(validation)
-    crash(errors.map(e => e.description).join('\n'))
   }
 }
 
@@ -319,11 +353,11 @@ export function array<T, RT: Type<T>>(type: RT, name?: string): ArrayType<RT> { 
         const errors = []
         for (let i = 0, len = a.length; i < len; i++) {
           const validation = type.validate(a[i], c.concat(createContextEntry(String(i), type)))
-          if (either.isLeft(validation)) {
-            pushAll(errors, either.fromLeft(validation))
+          if (isFailure(validation)) {
+            pushAll(errors, fromFailure(validation))
           }
         }
-        return errors.length ? either.left(errors) : success(unsafeCoerce(a))
+        return errors.length ? failures(errors) : success(unsafeCoerce(a))
       }, arr.validate(v, c))
     }
   }
@@ -355,7 +389,7 @@ export function union<TS: Array<Type<mixed>>>(types: TS, name?: string): UnionTy
     validate: (v, c) => {
       for (let i = 0, len = types.length; i < len; i++) {
         const validation = types[i].validate(v, c)
-        if (either.isRight(validation)) {
+        if (isSuccess(validation)) {
           return validation
         }
       }
@@ -393,11 +427,11 @@ export function tuple<TS: Array<Type<mixed>>>(types: TS, name?: string): TupleTy
         for (let i = 0, len = types.length; i < len; i++) {
           const type = types[i]
           const validation = type.validate(a[i], c.concat(createContextEntry(String(i), type)))
-          if (either.isLeft(validation)) {
-            pushAll(errors, either.fromLeft(validation))
+          if (isFailure(validation)) {
+            pushAll(errors, fromFailure(validation))
           }
         }
-        return errors.length ? either.left(errors) : success(a)
+        return errors.length ? failures(errors) : success(a)
       }, arr.validate(v, c))
     }
   }
@@ -431,11 +465,11 @@ export function intersection<TS: Array<Type<mixed>>>(types: TS, name?: string): 
       for (let i = 0, len = types.length; i < len; i++) {
         const type = types[i]
         const validation = type.validate(v, c.concat(createContextEntry(String(i), type)))
-        if (either.isLeft(validation)) {
-          pushAll(errors, either.fromLeft(validation))
+        if (isFailure(validation)) {
+          pushAll(errors, fromFailure(validation))
         }
       }
-      return errors.length ? either.left(errors) : success(v)
+      return errors.length ? failures(errors) : success(v)
     }
   }
 }
@@ -489,15 +523,15 @@ export function mapping<D, RTD: Type<D>, C, RTC: Type<C>>(domain: RTD, codomain:
         const errors = []
         for (let k in o) {
           const domainValidation = domain.validate(k, c.concat(createContextEntry(k, domain)))
-          if (either.isLeft(domainValidation)) {
-            pushAll(errors, either.fromLeft(domainValidation))
+          if (isFailure(domainValidation)) {
+            pushAll(errors, fromFailure(domainValidation))
           }
           const codomainValidation = codomain.validate(o[k], c.concat(createContextEntry(k, codomain)))
-          if (either.isLeft(codomainValidation)) {
-            pushAll(errors, either.fromLeft(codomainValidation))
+          if (isFailure(codomainValidation)) {
+            pushAll(errors, fromFailure(codomainValidation))
           }
         }
-        return errors.length ? either.left(errors) : success(o)
+        return errors.length ? failures(errors) : success(o)
       }, obj.validate(v, c))
     }
   }
@@ -600,7 +634,7 @@ export function $exact<P: Props>(props: P, name?: string): $ExactType<P> {
     validate: (v, c) => {
       return either.chain(o => {
         const errors = checkAdditionalProps(props, o, c)
-        return errors.length ? either.left(errors) : success(unsafeCoerce(o))
+        return errors.length ? failures(errors) : success(unsafeCoerce(o))
       }, type.validate(v, c))
     }
   }
@@ -632,13 +666,13 @@ export function $shape<P: Props>(type: ObjectType<P>, name?: string): $ShapeType
           if (o.hasOwnProperty(prop)) {
             const type = props[prop]
             const validation = type.validate(o[prop], c.concat(createContextEntry(prop, type)))
-            if (either.isLeft(validation)) {
-              pushAll(errors, either.fromLeft(validation))
+            if (isFailure(validation)) {
+              pushAll(errors, fromFailure(validation))
             }
           }
         }
         pushAll(errors, checkAdditionalProps(props, o, c))
-        return errors.length ? either.left(errors) : success(o)
+        return errors.length ? failures(errors) : success(o)
       }, obj.validate(v, c))
     }
   }
@@ -670,11 +704,11 @@ export function object<P: Props>(props: P, name?: string): ObjectType<P> {
         for (let k in props) {
           const type = props[k]
           const validation = type.validate(o[k], c.concat(createContextEntry(k, type)))
-          if (either.isLeft(validation)) {
-            pushAll(errors, either.fromLeft(validation))
+          if (isFailure(validation)) {
+            pushAll(errors, fromFailure(validation))
           }
         }
-        return errors.length ? either.left(errors) : success(o)
+        return errors.length ? failures(errors) : success(o)
       }, obj.validate(v, c))
     }
   }

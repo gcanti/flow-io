@@ -21,7 +21,7 @@ describe('classOf', () => {
     class A {}
     const T = t.classOf(A)
     const value = A
-    assert.strictEqual(t.either.fromRight(t.validate(value, T)), value)
+    assert.strictEqual(t.fromSuccess(t.validate(value, T)), value)
   })
 
   it('should fail validating an invalid value', () => {

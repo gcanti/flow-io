@@ -18,7 +18,7 @@ describe('refinement', () => {
   it('should return the same reference if validation succeeded', () => {
     const T = t.refinement(t.obj, () => true)
     const value = {}
-    assert.strictEqual(t.either.fromRight(t.validate(value, T)), value)
+    assert.strictEqual(t.fromSuccess(t.validate(value, T)), value)
   })
 
   it('should fail validating an invalid value', () => {

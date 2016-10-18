@@ -18,7 +18,7 @@ describe('intersection', () => {
   it('should return the same reference if validation succeeded', () => {
     const T = t.intersection([t.object({ a: t.number }), t.object({ b: t.number })])
     const value = { a: 1, b: 2 }
-    assert.strictEqual(t.either.fromRight(t.validate(value, T)), value)
+    assert.strictEqual(t.fromSuccess(t.validate(value, T)), value)
   })
 
   it('should fail validating an invalid value', () => {

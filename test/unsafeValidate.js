@@ -8,8 +8,14 @@ import * as t from '../src/index'
 
 describe('unsafeValidate', () => {
 
-  it('should return void', () => {
-    assert.strictEqual(t.unsafeValidate('a', t.string), undefined)
+  it('should return T if validation succeeded', () => {
+    assert.strictEqual(t.unsafeValidate('a', t.string), 'a')
+  })
+
+  it('should throw if validation failed', () => {
+    assert.throws(() => {
+      t.unsafeValidate(1, t.string)
+    })
   })
 
 })

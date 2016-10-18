@@ -18,7 +18,7 @@ describe('array', () => {
   it('should return the same reference if validation succeeded', () => {
     const T = t.array(t.number)
     const value = [1, 2, 3]
-    assert.strictEqual(t.either.fromRight(t.validate(value, T)), value)
+    assert.strictEqual(t.fromSuccess(t.validate(value, T)), value)
   })
 
   it('should fail validating an invalid value', () => {

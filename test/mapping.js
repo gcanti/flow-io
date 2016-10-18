@@ -18,7 +18,7 @@ describe('mapping', () => {
   it('should return the same reference if validation succeeded', () => {
     const T = t.mapping(t.refinement(t.string, s => s.length >= 2), t.number)
     const value = { aa: 1 }
-    assert.strictEqual(t.either.fromRight(t.validate(value, T)), value)
+    assert.strictEqual(t.fromSuccess(t.validate(value, T)), value)
   })
 
   it('should fail validating an invalid value', () => {

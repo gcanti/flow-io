@@ -24,7 +24,7 @@ describe('recursion', () => {
       b: t.maybe(self)
     }))
     const value = { a: 1, b: { a: 2 } }
-    assert.strictEqual(t.either.fromRight(t.validate(value, T)), value)
+    assert.strictEqual(t.fromSuccess(t.validate(value, T)), value)
   })
 
   it('should fail validating an invalid value', () => {
