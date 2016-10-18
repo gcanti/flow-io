@@ -458,8 +458,8 @@ export function maybe<T, RT: Type<T>>(type: RT, name?: string): MaybeType<RT> { 
 // map objects
 //
 
-export interface MapType<RTD, RTC> extends Type<{ [key: TypeOf<RTD>]: TypeOf<RTC> }> {
-  kind: 'map';
+export interface MappingType<RTD, RTC> extends Type<{ [key: TypeOf<RTD>]: TypeOf<RTC> }> {
+  kind: 'mapping';
   domain: RTD;
   codomain: RTC;
 }
@@ -468,9 +468,9 @@ export function getDefaultMapName<D, C>(domain: Type<D>, codomain: Type<C>): str
   return `{ [key: ${getTypeName(domain)}]: ${getTypeName(codomain)} }`
 }
 
-export function map<D, RTD: Type<D>, C, RTC: Type<C>>(domain: RTD, codomain: RTC, name?: string): MapType<RTD, RTC> { // eslint-disable-line no-unused-vars
+export function mapping<D, RTD: Type<D>, C, RTC: Type<C>>(domain: RTD, codomain: RTC, name?: string): MappingType<RTD, RTC> { // eslint-disable-line no-unused-vars
   return {
-    kind: 'map',
+    kind: 'mapping',
     domain,
     codomain,
     name: name || getDefaultMapName(domain, codomain),

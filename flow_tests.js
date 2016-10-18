@@ -178,7 +178,7 @@ const RTI8 = t.maybe(t.object({ a: t.number }))
 // map objects
 //
 
-const T9: Type<{ [key: 'a' | 'b']: number }> = t.map(t.union([t.literal({ value: 'a' }), t.literal({ value: 'b' })]), t.number)
+const T9: Type<{ [key: 'a' | 'b']: number }> = t.mapping(t.union([t.literal({ value: 'a' }), t.literal({ value: 'b' })]), t.number)
 const vr9 = t.validate(null, T9)
 if (t.either.isRight(vr9)) {
   const v9 = t.either.fromRight(vr9)
@@ -188,7 +188,7 @@ if (t.either.isRight(vr9)) {
 }
 
 // runtime type introspection
-const RTI9 = t.map(t.union([t.literal({ value: 'a' }), t.literal({ value: 'b' })]), t.object({ a: t.number }))
+const RTI9 = t.mapping(t.union([t.literal({ value: 'a' }), t.literal({ value: 'b' })]), t.object({ a: t.number }))
 ;(RTI9.name: string)
 ;(RTI9.domain: Type<'a'| 'b'>)
 ;(RTI9.codomain: ObjectType<Props>)
