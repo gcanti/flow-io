@@ -51,10 +51,10 @@ A runtime type can be used to validate an object in memory (for example an API p
 
 ```js
 // ok
-t.check(JSON.parse('{"name":"Giulio","age":43}'), Person)
+t.unsafeValidate(JSON.parse('{"name":"Giulio","age":43}'), Person)
 
 // throws Invalid value undefined supplied to : { name: string, age: number }/age: number
-t.check(JSON.parse('{"name":"Giulio"}'), Person)
+t.unsafeValidate(JSON.parse('{"name":"Giulio"}'), Person)
 
 // doesn't throw, returns a data structure containing
 // the validation errors (Either<)

@@ -142,7 +142,7 @@ export function assert(guard: boolean, message?: () => string): void {
   }
 }
 
-export function check<T>(value: mixed, type: Type<T>): void {
+export function unsafeValidate<T>(value: mixed, type: Type<T>): void {
   const validation = validate(value, type)
   if (either.isLeft(validation)) {
     const errors = either.fromLeft(validation)
