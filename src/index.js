@@ -6,12 +6,6 @@ import * as either from 'flow-static-land/lib/Either'
 import { unsafeCoerce } from 'flow-static-land/lib/Unsafe'
 
 //
-// re-export flow-static-land tools
-//
-
-export { either }
-
-//
 // type extractor
 //
 
