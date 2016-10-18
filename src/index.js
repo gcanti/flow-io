@@ -51,10 +51,6 @@ export interface Type<T> {
 // helpers
 //
 
-function getDefaultContext<T>(type: Type<T>): Context {
-  return [{ key: '', name: type.name }]
-}
-
 function stringify(value: mixed): string {
   return isFunction(value) ? getFunctionName(value) : JSON.stringify(value)
 }
@@ -111,6 +107,10 @@ function checkAdditionalProps(props: Props, o: Object, c: Context): Array<Valida
 //
 // API
 //
+
+export function getDefaultContext<T>(type: Type<T>): Context {
+  return [{ key: '', name: type.name }]
+}
 
 export function getTypeName<T>(type: Type<T>): string {
   return type.name
