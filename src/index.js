@@ -34,11 +34,11 @@ export type ValidationResult<T> = Either<Array<ValidationError>, T>;
 
 export type Validation<T> = (value: mixed, context: Context) => ValidationResult<T>;
 
-export interface Type<T> {
+export type Type<T> = {
   name: string;
   // validate MUST return `value` if validation succeeded
   validate: Validation<T>;
-}
+};
 
 //
 // helpers
@@ -186,10 +186,10 @@ export function assert(guard: boolean, message?: () => string): void {
 // literals
 //
 
-export interface LiteralType<T> extends Type<T> {
+export type LiteralType<T> = Type<T> & {
   kind: 'literal';
   value: T;
-}
+};
 
 export function literal<T: string | number | boolean, O: $Exact<{ value: T }>>(o: O): LiteralType<$PropertyType<O, 'value'>> { // eslint-disable-line no-unused-vars
   const value = o.value
@@ -207,10 +207,15 @@ export function literal<T: string | number | boolean, O: $Exact<{ value: T }>>(o
 // class instances
 //
 
-export interface InstanceOfType<T> extends Type<T> {
+export type InstanceOfType<T> = Type<T> & {
   kind: 'instanceOf';
   ctor: Class<T>;
-}
+};
+
+// export type InstanceOfType<T> = Type<T> & {
+//   kind: 'instanceOf';
+//   ctor: Class<T>;
+// }
 
 export function instanceOf<T>(ctor: Class<T>, name?: string): InstanceOfType<T> {
   return {
@@ -225,7 +230,7 @@ export function instanceOf<T>(ctor: Class<T>, name?: string): InstanceOfType<T> 
 // classes
 //
 
-export interface ClassType<T> extends Type<Class<T>> {
+export type ClassType<T> = Type<Class<T>> & {
   kind: 'class';
   ctor: Class<T>;
 }
@@ -248,9 +253,9 @@ export function classOf<T>(ctor: Class<T>, name?: string): ClassType<T> {
 // irreducibles
 //
 
-export interface IrreducibleType<T> extends Type<T> {
+export type IrreducibleType<T> = Type<T> & {
   kind: 'irreducible';
-}
+};
 
 function isNil(v: mixed) /* : boolean %checks */ {
   return v === void 0 || v === null
@@ -328,10 +333,10 @@ export const fun: IrreducibleType<Function> = {
 // arrays
 //
 
-export interface ArrayType<RT> extends Type<Array<TypeOf<RT>>> {
+export type ArrayType<RT> = Type<Array<TypeOf<RT>>> & {
   kind: 'array';
   type: RT;
-}
+};
 
 export function getDefaultListName<T>(type: Type<T>): string {
   return `Array<${getTypeName(type)}>`
@@ -361,10 +366,10 @@ export function array<T, RT: Type<T>>(type: RT, name?: string): ArrayType<RT> { 
 // unions
 //
 
-export interface UnionType<TS, T> extends Type<T> {
+export type UnionType<TS, T> = Type<T> & {
   kind: 'union';
   types: TS;
-}
+};
 
 export function getDefaultUnionName(types: Array<Type<mixed>>): string {
   return `(${types.map(getTypeName).join(' | ')})`
@@ -396,10 +401,10 @@ export function union<TS: Array<Type<mixed>>>(types: TS, name?: string): UnionTy
 // tuples
 //
 
-export interface TupleType<TS, T> extends Type<T> {
+export type TupleType<TS, T> = Type<T> & {
   kind: 'tuple';
   types: TS;
-}
+};
 
 export function getDefaultTupleName(types: Array<Type<mixed>>): string {
   return `[${types.map(getTypeName).join(', ')}]`
@@ -435,10 +440,10 @@ export function tuple<TS: Array<Type<mixed>>>(types: TS, name?: string): TupleTy
 // intersections
 //
 
-export interface IntersectionType<TS, T> extends Type<T> {
+export type IntersectionType<TS, T> = Type<T> & {
   kind: 'intersection';
   types: TS;
-}
+};
 
 export function getDefaultIntersectionName(types: Array<Type<mixed>>): string {
   return `(${types.map(getTypeName).join(' & ')})`
@@ -472,10 +477,10 @@ export function intersection<TS: Array<Type<mixed>>>(types: TS, name?: string): 
 // maybes
 //
 
-export interface MaybeType<RT> extends Type<?TypeOf<RT>> {
+export type MaybeType<RT> = Type<?TypeOf<RT>> & {
   kind: 'maybe';
   type: RT;
-}
+};
 
 export function getDefaultMaybeName<T>(type: Type<T>): string {
   return `?${getTypeName(type)}`
@@ -496,11 +501,11 @@ export function maybe<T, RT: Type<T>>(type: RT, name?: string): MaybeType<RT> { 
 // map objects
 //
 
-export interface MappingType<RTD, RTC> extends Type<{ [key: TypeOf<RTD>]: TypeOf<RTC> }> {
+export type MappingType<RTD, RTC> = Type<{ [key: TypeOf<RTD>]: TypeOf<RTC> }> & {
   kind: 'mapping';
   domain: RTD;
   codomain: RTC;
-}
+};
 
 export function getDefaultMapName<D, C>(domain: Type<D>, codomain: Type<C>): string {
   return `{ [key: ${getTypeName(domain)}]: ${getTypeName(codomain)} }`
@@ -537,11 +542,11 @@ export function mapping<D, RTD: Type<D>, C, RTC: Type<C>>(domain: RTD, codomain:
 
 export type Predicate<T> = (value: T) => boolean;
 
-export interface RefinementType<RT> extends Type<TypeOf<RT>> {
+export type RefinementType<RT> = Type<TypeOf<RT>> & {
   kind: 'refinement';
   type: RT;
   predicate: Predicate<TypeOf<RT>>;
-}
+};
 
 export function getDefaultRefinementName<T>(type: Type<T>, predicate: Predicate<T>): string {
   return `(${getTypeName(type)} | ${getFunctionName(predicate)})`
@@ -580,10 +585,10 @@ export function recursion<T, RT: Type<T>>(name: string, definition: (self: Type<
 // $Keys
 //
 
-export interface $KeysType<P: Props> extends Type<$Keys<P>> {
+export type $KeysType<P: Props> = Type<$Keys<P>> & {
   kind: '$keys';
   type: ObjectType<P>;
-}
+};
 
 export function getDefault$KeysName<P: Props>(type: ObjectType<P>): string {
   return `$Keys<${type.name}>`
@@ -608,10 +613,10 @@ export function $keys<P: Props>(type: ObjectType<P>, name?: string): $KeysType<P
 // $Exact
 //
 
-export interface $ExactType<P: Props> extends Type<$Exact<$ObjMap<P, <T>(v: Type<T>) => T>>> {
+export type $ExactType<P: Props> = Type<$Exact<$ObjMap<P, <T>(v: Type<T>) => T>>> & {
   kind: '$exact';
   props: P;
-}
+};
 
 export function getDefault$ExactName(props: Props): string {
   return `$Exact<${getDefaultObjectName(props)}>`
@@ -638,10 +643,10 @@ export function $exact<P: Props>(props: P, name?: string): $ExactType<P> {
 // $Shape
 //
 
-export interface $ShapeType<P: Props> extends Type<$Shape<$ObjMap<P, <T>(v: Type<T>) => T>>> {
+export type $ShapeType<P: Props> = Type<$Shape<$ObjMap<P, <T>(v: Type<T>) => T>>> & {
   kind: '$shape';
   type: ObjectType<P>;
-}
+};
 
 export function getDefault$ShapeName<P: Props>(type: ObjectType<P>): string {
   return `$Shape<${type.name}>`
@@ -678,10 +683,10 @@ export function $shape<P: Props>(type: ObjectType<P>, name?: string): $ShapeType
 
 export type Props = {[key: string]: Type<any>};
 
-export interface ObjectType<P: Props> extends Type<$ObjMap<P, <T>(v: Type<T>) => T>> {
+export type ObjectType<P: Props> = Type<$ObjMap<P, <T>(v: Type<T>) => T>> & {
   kind: 'object';
   props: P;
-}
+};
 
 export function getDefaultObjectName(props: Props): string {
   return `{ ${Object.keys(props).map(k => `${k}: ${props[k].name}`).join(', ')} }`
