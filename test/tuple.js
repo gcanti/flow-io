@@ -18,7 +18,7 @@ describe('tuple', () => {
   it('should return the same reference if validation succeeded', () => {
     const T = t.tuple([t.number, t.string])
     const value = [1, 'a']
-    assert.strictEqual(t.either.fromRight(t.validate(value, T)), value)
+    assert.strictEqual(t.fromSuccess(t.validate(value, T)), value)
   })
 
   it('should fail validating an invalid value', () => {

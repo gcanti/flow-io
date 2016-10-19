@@ -19,7 +19,7 @@ describe('instanceOf', () => {
     class A {}
     const T = t.instanceOf(A)
     const value = new A()
-    assert.strictEqual(t.either.fromRight(t.validate(value, T)), value)
+    assert.strictEqual(t.fromSuccess(t.validate(value, T)), value)
   })
 
   it('should fail validating an invalid value', () => {

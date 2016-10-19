@@ -17,7 +17,7 @@ describe('$exact', () => {
   it('should return the same reference if validation succeeded', () => {
     const T = t.$exact({ a: t.string })
     const value = { a: 's' }
-    assert.strictEqual(t.either.fromRight(t.validate(value, T)), value)
+    assert.strictEqual(t.fromSuccess(t.validate(value, T)), value)
   })
 
   it('should fail validating an invalid value', () => {
