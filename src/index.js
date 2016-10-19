@@ -58,18 +58,11 @@ function getDefaultDescription(value: mixed, context: Context): string {
   return `Invalid value ${stringify(value)} supplied to ${getContextPath(context)}`
 }
 
-function createValidationError(value: mixed, context: Context): ValidationError {
+function getValidationError(value: mixed, context: Context): ValidationError {
   return {
     value,
     context,
     description: getDefaultDescription(value, context)
-  }
-}
-
-function createContextEntry<T>(key: string, type: Type<T>): ContextEntry {
-  return {
-    key,
-    name: type.name
   }
 }
 
@@ -93,7 +86,7 @@ function checkAdditionalProps(props: Props, o: Object, c: Context): Array<Valida
   const errors = []
   for (let k in o) {
     if (!props.hasOwnProperty(k)) {
-      errors.push(createValidationError(o[k], c.concat(createContextEntry(k, nil))))
+      errors.push(getValidationError(o[k], c.concat(getContextEntry(k, nil))))
     }
   }
   return errors
@@ -102,6 +95,13 @@ function checkAdditionalProps(props: Props, o: Object, c: Context): Array<Valida
 //
 // API
 //
+
+export function getContextEntry<T>(key: string, type: Type<T>): ContextEntry {
+  return {
+    key,
+    name: type.name
+  }
+}
 
 export function getDefaultContext<T>(type: Type<T>): Context {
   return [{ key: '', name: type.name }]
@@ -116,7 +116,7 @@ export function failures<T>(errors: Array<ValidationError>): ValidationResult<T>
 }
 
 export function failure<T>(value: mixed, context: Context): ValidationResult<T> {
-  return either.left([createValidationError(value, context)])
+  return either.left([getValidationError(value, context)])
 }
 
 export function success<T>(value: T): ValidationResult<T> {
@@ -213,11 +213,6 @@ export type InstanceOfType<T> = Type<T> & {
   kind: 'instanceOf';
   ctor: Class<T>;
 };
-
-// export type InstanceOfType<T> = Type<T> & {
-//   kind: 'instanceOf';
-//   ctor: Class<T>;
-// }
 
 export function instanceOf<T>(ctor: Class<T>, name?: string): InstanceOfType<T> {
   return {
@@ -353,7 +348,7 @@ export function array<T, RT: Type<T>>(type: RT, name?: string): ArrayType<RT> { 
       return either.chain((a: Array<mixed>) => {
         const errors = []
         for (let i = 0, len = a.length; i < len; i++) {
-          const validation = type.validate(a[i], c.concat(createContextEntry(String(i), type)))
+          const validation = type.validate(a[i], c.concat(getContextEntry(String(i), type)))
           if (isFailure(validation)) {
             pushAll(errors, fromFailure(validation))
           }
@@ -427,7 +422,7 @@ export function tuple<TS: Array<Type<mixed>>>(types: TS, name?: string): TupleTy
         const errors = []
         for (let i = 0, len = types.length; i < len; i++) {
           const type = types[i]
-          const validation = type.validate(a[i], c.concat(createContextEntry(String(i), type)))
+          const validation = type.validate(a[i], c.concat(getContextEntry(String(i), type)))
           if (isFailure(validation)) {
             pushAll(errors, fromFailure(validation))
           }
@@ -465,7 +460,7 @@ export function intersection<TS: Array<Type<mixed>>>(types: TS, name?: string): 
       const errors = []
       for (let i = 0, len = types.length; i < len; i++) {
         const type = types[i]
-        const validation = type.validate(v, c.concat(createContextEntry(String(i), type)))
+        const validation = type.validate(v, c.concat(getContextEntry(String(i), type)))
         if (isFailure(validation)) {
           pushAll(errors, fromFailure(validation))
         }
@@ -523,11 +518,11 @@ export function mapping<D, RTD: Type<D>, C, RTC: Type<C>>(domain: RTD, codomain:
       return either.chain(o => {
         const errors = []
         for (let k in o) {
-          const domainValidation = domain.validate(k, c.concat(createContextEntry(k, domain)))
+          const domainValidation = domain.validate(k, c.concat(getContextEntry(k, domain)))
           if (isFailure(domainValidation)) {
             pushAll(errors, fromFailure(domainValidation))
           }
-          const codomainValidation = codomain.validate(o[k], c.concat(createContextEntry(k, codomain)))
+          const codomainValidation = codomain.validate(o[k], c.concat(getContextEntry(k, codomain)))
           if (isFailure(codomainValidation)) {
             pushAll(errors, fromFailure(codomainValidation))
           }
@@ -666,7 +661,7 @@ export function $shape<P: Props>(type: ObjectType<P>, name?: string): $ShapeType
         for (let prop in props) {
           if (o.hasOwnProperty(prop)) {
             const type = props[prop]
-            const validation = type.validate(o[prop], c.concat(createContextEntry(prop, type)))
+            const validation = type.validate(o[prop], c.concat(getContextEntry(prop, type)))
             if (isFailure(validation)) {
               pushAll(errors, fromFailure(validation))
             }
@@ -704,7 +699,7 @@ export function object<P: Props>(props: P, name?: string): ObjectType<P> {
         const errors = []
         for (let k in props) {
           const type = props[k]
-          const validation = type.validate(o[k], c.concat(createContextEntry(k, type)))
+          const validation = type.validate(o[k], c.concat(getContextEntry(k, type)))
           if (isFailure(validation)) {
             pushAll(errors, fromFailure(validation))
           }
