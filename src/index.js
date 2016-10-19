@@ -5,6 +5,8 @@ import type { Either } from 'flow-static-land/lib/Either'
 import * as either from 'flow-static-land/lib/Either'
 import { unsafeCoerce } from 'flow-static-land/lib/Unsafe'
 
+export { unsafeCoerce }
+
 //
 // type extractor
 //
