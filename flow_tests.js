@@ -4,7 +4,8 @@ import type {
   Type,
   Predicate,
   Props,
-  ObjectType
+  ObjectType,
+  TypeOf
 } from './src/index'
 
 import * as t from './src/index'
@@ -16,6 +17,7 @@ import * as t from './src/index'
 const T1: Type<number> = t.number
 t.map(t.validate(1, T1), v1 => {
   (v1: number)
+  ;(v1: TypeOf<typeof T1>)
   // $ExpectError
   ;(v1: string)
 })
@@ -32,6 +34,7 @@ class A {}
 const T2: Type<A> = t.instanceOf(A)
 t.map(t.validate(new A(), T2), v2 => {
   (v2: A)
+  ;(v2: TypeOf<typeof T2>)
   // $ExpectError
   ;(v2: string)
 })
@@ -48,6 +51,7 @@ const RTI2 = t.instanceOf(A)
 const T3: Type<'a'> = t.literal({ value: 'a' })
 t.map(t.validate('a', T3), v3 => {
   (v3: 'a')
+  ;(v3: TypeOf<typeof T3>)
   // $ExpectError
   ;(v3: 'b')
 })
@@ -65,6 +69,7 @@ const RTI3 = t.literal({ value: 'a' })
 const T4: Type<Array<number>> = t.array(t.number)
 t.map(t.validate([1, 2, 3], T4), v4 => {
   (v4: Array<number>)
+  ;(v4: TypeOf<typeof T4>)
   // $ExpectError
   ;(v4: Array<string>)
 })
@@ -83,6 +88,7 @@ const RTI4 = t.array(t.object({ a: t.number }))
 const T5: Type<string | number> = t.union([t.string, t.number])
 t.map(t.validate(1, T5), v5 => {
   (v5: string | number)
+  ;(v5: TypeOf<typeof T5>)
   // $ExpectError
   ;(v5: string)
 })
@@ -102,6 +108,7 @@ const RTI5 = t.union([t.string, t.object({ a: t.number })])
 const T6: Type<[string, number]> = t.tuple([t.string, t.number])
 t.map(t.validate(['a', 1], T6), v6 => {
   (v6: [string, number])
+  ;(v6: TypeOf<typeof T6>)
   // $ExpectError
   ;(v6: [number, number])
 })
@@ -127,6 +134,7 @@ t.intersection([])
 const T7: Type<{ a: number } & { b: number }> = t.intersection([t.object({ a: t.number }), t.object({ b: t.number })])
 t.map(t.validate({ a: 1, b: 2 }, T7), v7 => {
   (v7: { a: number } & { b: number })
+  ;(v7: TypeOf<typeof T7>)
   ;(v7: { a: number })
   ;(v7: { b: number })
   // $ExpectError
@@ -148,6 +156,7 @@ const RTI7 = t.intersection([t.object({ a: t.number }), t.object({ b: t.number }
 const T8: Type<?number> = t.maybe(t.number)
 t.map(t.validate(null, T8), v8 => {
   (v8: ?number)
+  ;(v8: TypeOf<typeof T8>)
   // $ExpectError
   ;(v8: ?string)
 })
@@ -166,6 +175,7 @@ const RTI8 = t.maybe(t.object({ a: t.number }))
 const T9: Type<{ [key: 'a' | 'b']: number }> = t.mapping(t.union([t.literal({ value: 'a' }), t.literal({ value: 'b' })]), t.number)
 t.map(t.validate(null, T9), v9 => {
   (v9: { [key: 'a' | 'b']: number })
+  ;(v9: TypeOf<typeof T9>)
   // $ExpectError
   ;(v9: { [key: string]: number })
 })
@@ -185,6 +195,7 @@ const RTI9 = t.mapping(t.union([t.literal({ value: 'a' }), t.literal({ value: 'b
 const T10: Type<number> = t.refinement(t.number, n => n >= 0)
 t.map(t.validate(1, T10), v10 => {
   (v10: number)
+  ;(v10: TypeOf<typeof T10>)
   // $ExpectError
   ;(v10: string)
 })
@@ -211,6 +222,7 @@ const T11: Type<T11T> = t.recursion('T11', self => t.object({
 }))
 t.map(t.validate({ a: 1 }, T11), v11 => {
   (v11: T11T)
+  ;(v11: TypeOf<typeof T11>)
   // $ExpectError
   ;(v11: string)
 })
@@ -232,6 +244,7 @@ const RTI11 = t.recursion('T11', self => t.object({
 const T12: Type<'a' | 'b'> = t.$keys(t.object({ a: t.number, b: t.number }))
 t.map(t.validate('a', T12), v12 => {
   (v12: 'a' | 'b')
+  ;(v12: TypeOf<typeof T12>)
   ;(v12: string)
   // $ExpectError
   ;(v12: number)
@@ -251,6 +264,7 @@ const RTI12 = t.$keys(t.object({ a: t.number, b: t.number }))
 const T13: Type<{| a: number |}> = t.$exact({ a: t.number })
 t.map(t.validate(1, T13), v13 => {
   (v13: {| a: number |})
+  ;(v13: TypeOf<typeof T13>)
   // $ExpectError
   ;(v13: number)
 })
@@ -268,6 +282,7 @@ const RTI13 = t.$exact({ a: t.number })
 const T14: Type<$Shape<{ a: number }>> = t.$shape(t.object({ a: t.number }))
 t.map(t.validate({}, T14), v14 => {
   (v14: $Shape<{ a: number }>)
+  ;(v14: TypeOf<typeof T14>)
   // $ExpectError
   ;(v14: { a: number, b: number })
 })
@@ -303,6 +318,7 @@ const T15: Type<T15T> = t.object({
 })
 t.map(t.validate({}, T15), v15 => {
   (v15: T15T)
+  ;(v15: TypeOf<typeof T15>)
   // $ExpectError
   ;(v15.b.d.e: string)
 })
@@ -330,6 +346,7 @@ const RTI15 = t.object({
 const T16: Type<Class<A>> = t.classOf(A)
 t.map(t.validate(A, T16), v16 => {
   (v16: Class<A>)
+  ;(v16: TypeOf<typeof T16>)
   // $ExpectError
   ;(v16: string)
 })
