@@ -70,14 +70,6 @@ function getFunctionName(f: Function): string {
   return f.displayName || f.name || `<function${f.length}>`
 }
 
-function getObjectKeys<O: { [key: string]: any }>(o: O): $ObjMap<O, () => true> {
-  const keys = {}
-  for (let k in o) {
-    keys[k] = true
-  }
-  return keys
-}
-
 function pushAll<A>(xs: Array<A>, ys: Array<A>): void {
   Array.prototype.push.apply(xs, ys)
 }
@@ -146,15 +138,15 @@ export function of<A>(a: A): ValidationResult<A> {
   return either.of(a)
 }
 
-export function map<A, B>(validation: ValidationResult<A>, f: (a: A) => B): ValidationResult<B> {
+export function map<A, B>(f: (a: A) => B, validation: ValidationResult<A>): ValidationResult<B> {
   return either.map(f, validation)
 }
 
-export function ap<A, B>(validation: ValidationResult<A>, f: ValidationResult<(a: A) => B>): ValidationResult<B> {
+export function ap<A, B>(f: ValidationResult<(a: A) => B>, validation: ValidationResult<A>): ValidationResult<B> {
   return either.ap(f, validation)
 }
 
-export function chain<A, B>(validation: ValidationResult<A>, f: (a: A) => ValidationResult<B>): ValidationResult<B> {
+export function chain<A, B>(f: (a: A) => ValidationResult<B>, validation: ValidationResult<A>): ValidationResult<B> {
   return either.chain(f, validation)
 }
 
@@ -227,21 +219,17 @@ export function instanceOf<T>(ctor: Class<T>, name?: string): InstanceOfType<T> 
 // classes
 //
 
-export interface ClassType<T> extends Type<Class<T>> {
+export interface ClassType<T> extends Type<T> {
   kind: 'class';
-  ctor: Class<T>;
+  ctor: T;
 }
 
-export function getDefaultClassOfName<T>(ctor: Class<T>): string {
-  return `Class<${getFunctionName(ctor)}>`
-}
-
-export function classOf<T>(ctor: Class<T>, name?: string): ClassType<T> {
+export function classOf<T>(ctor: Class<T>, name?: string): ClassType<Class<T>> {
   const type = refinement(fun, f => f === ctor || f.prototype instanceof ctor, name)
   return {
     kind: 'class',
     ctor,
-    name: name || getDefaultClassOfName(ctor),
+    name: name || `Class<${getFunctionName(ctor)}>`,
     validate: (v, c) => type.validate(v, c)
   }
 }
@@ -335,15 +323,11 @@ export interface ArrayType<RT> extends Type<Array<TypeOf<RT>>> {
   type: RT;
 }
 
-export function getDefaultListName<T>(type: Type<T>): string {
-  return `Array<${getTypeName(type)}>`
-}
-
 export function array<T, RT: Type<T>>(type: RT, name?: string): ArrayType<RT> { // eslint-disable-line no-unused-vars
   return {
     kind: 'array',
     type,
-    name: name || getDefaultListName(type),
+    name: name || `Array<${getTypeName(type)}>`,
     validate: (v, c) => {
       return either.chain((a: Array<mixed>) => {
         const errors = []
@@ -368,10 +352,6 @@ export interface UnionType<TS, T> extends Type<T> {
   types: TS;
 }
 
-export function getDefaultUnionName(types: Array<Type<mixed>>): string {
-  return `(${types.map(getTypeName).join(' | ')})`
-}
-
 declare function union<A, B, C, D, E, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>, TE: Type<E>, TS: [TA, TB, TC, TD, TE]>(types: TS, name?: string) : UnionType<TS, A | B | C | D | E>; // eslint-disable-line no-redeclare
 declare function union<A, B, C, D, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>, TS: [TA, TB, TC, TD]>(types: TS, name?: string) : UnionType<TS, A | B | C | D>; // eslint-disable-line no-redeclare
 declare function union<A, B, C, TA: Type<A>, TB: Type<B>, TC: Type<C>, TS: [TA, TB, TC]>(types: TS, name?: string) : UnionType<TS, A | B | C>; // eslint-disable-line no-redeclare
@@ -381,7 +361,7 @@ export function union<TS: Array<Type<mixed>>>(types: TS, name?: string): UnionTy
   return {
     kind: 'union',
     types,
-    name: name || getDefaultUnionName(types),
+    name: name || `(${types.map(getTypeName).join(' | ')})`,
     validate: (v, c) => {
       for (let i = 0, len = types.length; i < len; i++) {
         const validation = types[i].validate(v, c)
@@ -403,10 +383,6 @@ export interface TupleType<TS, T> extends Type<T> {
   types: TS;
 }
 
-export function getDefaultTupleName(types: Array<Type<mixed>>): string {
-  return `[${types.map(getTypeName).join(', ')}]`
-}
-
 declare function tuple<A, B, C, D, E, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>, TE: Type<E>, TS: [TA, TB, TC, TD, TE]>(types: TS, name?: string) : TupleType<TS, [A, B, C, D, E]>; // eslint-disable-line no-redeclare
 declare function tuple<A, B, C, D, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>, TS: [TA, TB, TC, TD]>(types: TS, name?: string) : TupleType<TS, [A, B, C, D]>; // eslint-disable-line no-redeclare
 declare function tuple<A, B, C, TA: Type<A>, TB: Type<B>, TC: Type<C>, TS: [TA, TB, TC]>(types: TS, name?: string) : TupleType<TS, [A, B, C]>; // eslint-disable-line no-redeclare
@@ -416,7 +392,7 @@ export function tuple<TS: Array<Type<mixed>>>(types: TS, name?: string): TupleTy
   return {
     kind: 'tuple',
     types,
-    name: name || getDefaultTupleName(types),
+    name: name || `[${types.map(getTypeName).join(', ')}]`,
     validate: (v, c) => {
       return either.chain((a: Array<mixed>) => {
         const errors = []
@@ -442,10 +418,6 @@ export interface IntersectionType<TS, T> extends Type<T> {
   types: TS;
 }
 
-export function getDefaultIntersectionName(types: Array<Type<mixed>>): string {
-  return `(${types.map(getTypeName).join(' & ')})`
-}
-
 declare function intersection<A, B, C, D, E, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>, TE: Type<E>, TS: [TA, TB, TC, TD, TE]>(types: TS, name?: string) : IntersectionType<TS, A & B & C & D & E>; // eslint-disable-line no-redeclare
 declare function intersection<A, B, C, D, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Type<D>, TS: [TA, TB, TC, TD]>(types: TS, name?: string) : IntersectionType<TS, A & B & C & D>; // eslint-disable-line no-redeclare
 declare function intersection<A, B, C, TA: Type<A>, TB: Type<B>, TC: Type<C>, TS: [TA, TB, TC]>(types: TS, name?: string) : IntersectionType<TS, A & B & C>; // eslint-disable-line no-redeclare
@@ -455,7 +427,7 @@ export function intersection<TS: Array<Type<mixed>>>(types: TS, name?: string): 
   return {
     kind: 'intersection',
     types,
-    name: name || getDefaultIntersectionName(types),
+    name: name || `(${types.map(getTypeName).join(' & ')})`,
     validate: (v, c) => {
       const errors = []
       for (let i = 0, len = types.length; i < len; i++) {
@@ -479,15 +451,11 @@ export interface MaybeType<RT> extends Type<?TypeOf<RT>> {
   type: RT;
 }
 
-export function getDefaultMaybeName<T>(type: Type<T>): string {
-  return `?${getTypeName(type)}`
-}
-
 export function maybe<T, RT: Type<T>>(type: RT, name?: string): MaybeType<RT> { // eslint-disable-line no-unused-vars
   return {
     kind: 'maybe',
     type,
-    name: name || getDefaultMaybeName(type),
+    name: name || `?${getTypeName(type)}`,
     validate: (v, c) => {
       return unsafeCoerce(isNil(v) ? success(v) : type.validate(v, c))
     }
@@ -504,16 +472,12 @@ export interface MappingType<RTD, RTC> extends Type<{ [key: TypeOf<RTD>]: TypeOf
   codomain: RTC;
 }
 
-export function getDefaultMapName<D, C>(domain: Type<D>, codomain: Type<C>): string {
-  return `{ [key: ${getTypeName(domain)}]: ${getTypeName(codomain)} }`
-}
-
-export function mapping<D, RTD: Type<D>, C, RTC: Type<C>>(domain: RTD, codomain: RTC, name?: string): MappingType<RTD, RTC> { // eslint-disable-line no-unused-vars
+export function mapping<D: string, RTD: Type<D>, C, RTC: Type<C>>(domain: RTD, codomain: RTC, name?: string): MappingType<RTD, RTC> { // eslint-disable-line no-unused-vars
   return {
     kind: 'mapping',
     domain,
     codomain,
-    name: name || getDefaultMapName(domain, codomain),
+    name: name || `{ [key: ${getTypeName(domain)}]: ${getTypeName(codomain)} }`,
     validate: (v, c) => {
       return either.chain(o => {
         const errors = []
@@ -545,16 +509,12 @@ export interface RefinementType<RT> extends Type<TypeOf<RT>> {
   predicate: Predicate<TypeOf<RT>>;
 }
 
-export function getDefaultRefinementName<T>(type: Type<T>, predicate: Predicate<T>): string {
-  return `(${getTypeName(type)} | ${getFunctionName(predicate)})`
-}
-
-export function refinement<T, RT: Type<T>>(type: RT, predicate: Predicate<TypeOf<RT>>, name?: string): RefinementType<RT> { // eslint-disable-line no-unused-vars
+export function refinement<T, RT: Type<T>>(type: RT, predicate: Predicate<T>, name?: string): RefinementType<RT> { // eslint-disable-line no-unused-vars
   return {
     kind: 'refinement',
     type,
     predicate,
-    name: name || getDefaultRefinementName(type, predicate),
+    name: name || `(${getTypeName(type)} | ${getFunctionName(predicate)})`,
     validate: (v, c) => {
       return either.chain(
         t => predicate(t) ? success(t) : failure(v, c),
@@ -582,24 +542,31 @@ export function recursion<T, RT: Type<T>>(name: string, definition: (self: Type<
 // $Keys
 //
 
-export interface $KeysType<P: Props> extends Type<$Keys<P>> {
+export interface $KeysType<RT> extends Type<$Keys<TypeOf<RT>>> {
   kind: '$keys';
-  type: ObjectType<P>;
+  type: RT;
 }
 
-export function getDefault$KeysName<P: Props>(type: ObjectType<P>): string {
-  return `$Keys<${type.name}>`
+function getKeys<P: Props>(type: ObjectType<P> | $ExactType<P> | $ShapeType<*>) {
+  if (type.kind === 'object' || type.kind === '$exact') {
+    const keys = {}
+    for (let k in type.props) {
+      keys[k] = true
+    }
+    return keys
+  }
+  return getKeys(type.type)
 }
 
-export function $keys<P: Props>(type: ObjectType<P>, name?: string): $KeysType<P> {
-  const keys = getObjectKeys(type.props)
+export function $keys<P: Props, ORT, RT: ObjectType<P> | $ExactType<P> | $ShapeType<ORT>>(type: RT, name?: string): $KeysType<RT> { // eslint-disable-line no-unused-vars
+  const keys = getKeys(type)
   return {
     kind: '$keys',
     type,
-    name: name || getDefault$KeysName(type),
+    name: name || `$Keys<${type.name}>`,
     validate: (v, c) => {
       return either.chain(
-        s => keys.hasOwnProperty(v) ? success(s) : failure(v, c),
+        k => keys.hasOwnProperty(v) ? success(unsafeCoerce(k)) : failure(v, c),
         string.validate(v, c)
       )
     }
@@ -610,18 +577,16 @@ export function $keys<P: Props>(type: ObjectType<P>, name?: string): $KeysType<P
 // $Exact
 //
 
-export interface $ExactType<P: Props> extends Type<$Exact<$ObjMap<P, <T>(v: Type<T>) => T>>> {
+export type PropsType<P: Props> = $ObjMap<P, <T>(v: Type<T>) => T>;
+
+export interface $ExactType<P: Props> extends Type<$Exact<PropsType<P>>> {
   kind: '$exact';
   props: P;
 }
 
-export function getDefault$ExactName(props: Props): string {
-  return `$Exact<${getDefaultObjectName(props)}>`
-}
-
 // accepts props instead of a generic type because of https://github.com/facebook/flow/issues/2626
 export function $exact<P: Props>(props: P, name?: string): $ExactType<P> {
-  name = name || getDefault$ExactName(props)
+  name = name || `$Exact<${getDefaultObjectTypeName(props)}>`
   const type = object(props, name)
   return {
     kind: '$exact',
@@ -640,21 +605,21 @@ export function $exact<P: Props>(props: P, name?: string): $ExactType<P> {
 // $Shape
 //
 
-export interface $ShapeType<P: Props> extends Type<$Shape<$ObjMap<P, <T>(v: Type<T>) => T>>> {
+type ExtractProps<P, RT: ObjectType<P> | $ExactType<P>> = P; // eslint-disable-line no-unused-vars
+
+export type PropsOf<T> = ExtractProps<*, T>;
+
+export interface $ShapeType<RT> extends Type<$Shape<PropsType<PropsOf<RT>>>> {
   kind: '$shape';
-  type: ObjectType<P>;
+  type: RT
 }
 
-export function getDefault$ShapeName<P: Props>(type: ObjectType<P>): string {
-  return `$Shape<${type.name}>`
-}
-
-export function $shape<P: Props>(type: ObjectType<P>, name?: string): $ShapeType<P> {
+export function $shape<P: Props, RT: ObjectType<P> | $ExactType<P>>(type: RT, name?: string): $ShapeType<RT> { // eslint-disable-line no-unused-vars
   const props = type.props
   return {
     kind: '$shape',
     type,
-    name: name || getDefault$ShapeName(type),
+    name: name || `$Shape<${type.name}>`,
     validate: (v, c) => {
       return either.chain(o => {
         const errors = []
@@ -678,14 +643,14 @@ export function $shape<P: Props>(type: ObjectType<P>, name?: string): $ShapeType
 // objects
 //
 
-export type Props = {[key: string]: Type<any>};
+export type Props = { [key: string]: Type<*> };
 
-export interface ObjectType<P: Props> extends Type<$ObjMap<P, <T>(v: Type<T>) => T>> {
+export interface ObjectType<P: Props> extends Type<PropsType<P>> {
   kind: 'object';
   props: P;
 }
 
-export function getDefaultObjectName(props: Props): string {
+export function getDefaultObjectTypeName(props: Props): string {
   return `{ ${Object.keys(props).map(k => `${k}: ${props[k].name}`).join(', ')} }`
 }
 
@@ -693,7 +658,7 @@ export function object<P: Props>(props: P, name?: string): ObjectType<P> {
   return {
     kind: 'object',
     props,
-    name: name || getDefaultObjectName(props),
+    name: name || getDefaultObjectTypeName(props),
     validate: (v, c) => {
       return either.chain(o => {
         const errors = []
