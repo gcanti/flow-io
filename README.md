@@ -57,10 +57,10 @@ t.unsafeValidate(JSON.parse('{"name":"Giulio","age":43}'), Person)
 t.unsafeValidate(JSON.parse('{"name":"Giulio"}'), Person)
 
 // doesn't throw, returns a data structure containing
-// the validation errors (Either<)
+// the validation errors
 const validation = t.validate(JSON.parse('{"name":"Giulio"}'), Person)
-if (t.either.isRight(validation)) {
-  const person: PersonT = t.either.fromRight(validation)
+if (t.isSuccess(validation)) {
+  const person: PersonT = t.fromSuccess(validation)
 }
 ```
 
