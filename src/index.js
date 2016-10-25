@@ -38,7 +38,6 @@ export type Validation<T> = (value: mixed, context: Context) => ValidationResult
 
 export type Type<T> = {
   name: string;
-  // validate MUST return `value` if validation succeeded
   validate: Validation<T>;
 };
 
@@ -329,15 +328,23 @@ export function array<T, RT: Type<T>>(type: RT, name?: string): ArrayType<RT> { 
     type,
     name: name || `Array<${getTypeName(type)}>`,
     validate: (v, c) => {
-      return either.chain((a: Array<mixed>) => {
+      return either.chain((as: Array<mixed>) => {
+        const t = []
         const errors = []
-        for (let i = 0, len = a.length; i < len; i++) {
-          const validation = type.validate(a[i], c.concat(getContextEntry(String(i), type)))
+        let changed = false
+        for (let i = 0, len = as.length; i < len; i++) {
+          const a = as[i]
+          const validation = type.validate(a, c.concat(getContextEntry(String(i), type)))
           if (isFailure(validation)) {
             pushAll(errors, fromFailure(validation))
           }
+          else {
+            const va = fromSuccess(validation)
+            changed = changed || ( va !== a )
+            t.push(va)
+          }
         }
-        return errors.length ? failures(errors) : success(unsafeCoerce(a))
+        return errors.length ? failures(errors) : success(changed ? t : unsafeCoerce(as))
       }, arr.validate(v, c))
     }
   }
@@ -357,7 +364,7 @@ declare function union<A, B, C, D, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Ty
 declare function union<A, B, C, TA: Type<A>, TB: Type<B>, TC: Type<C>, TS: [TA, TB, TC]>(types: TS, name?: string) : UnionType<TS, A | B | C>; // eslint-disable-line no-redeclare
 declare function union<A, B, TA: Type<A>, TB: Type<B>, TS: [TA, TB]>(types: TS, name?: string) : UnionType<TS, A | B>; // eslint-disable-line no-redeclare
 
-export function union<TS: Array<Type<mixed>>>(types: TS, name?: string): UnionType<TS, *> {  // eslint-disable-line no-redeclare
+export function union<TS: Array<Type<mixed>>>(types: TS, name?: string): UnionType<TS, *> { // eslint-disable-line no-redeclare
   return {
     kind: 'union',
     types,
@@ -388,22 +395,30 @@ declare function tuple<A, B, C, D, TA: Type<A>, TB: Type<B>, TC: Type<C>, TD: Ty
 declare function tuple<A, B, C, TA: Type<A>, TB: Type<B>, TC: Type<C>, TS: [TA, TB, TC]>(types: TS, name?: string) : TupleType<TS, [A, B, C]>; // eslint-disable-line no-redeclare
 declare function tuple<A, B, TA: Type<A>, TB: Type<B>, TS: [TA, TB]>(types: TS, name?: string) : TupleType<TS, [A, B]>; // eslint-disable-line no-redeclare
 
-export function tuple<TS: Array<Type<mixed>>>(types: TS, name?: string): TupleType<TS, *> {  // eslint-disable-line no-redeclare
+export function tuple<TS: Array<Type<*>>>(types: TS, name?: string): TupleType<TS, *> { // eslint-disable-line no-redeclare
   return {
     kind: 'tuple',
     types,
     name: name || `[${types.map(getTypeName).join(', ')}]`,
     validate: (v, c) => {
-      return either.chain((a: Array<mixed>) => {
+      return either.chain(as => {
+        const t = []
         const errors = []
+        let changed = false
         for (let i = 0, len = types.length; i < len; i++) {
+          const a = as[i]
           const type = types[i]
-          const validation = type.validate(a[i], c.concat(getContextEntry(String(i), type)))
+          const validation = type.validate(a, c.concat(getContextEntry(String(i), type)))
           if (isFailure(validation)) {
             pushAll(errors, fromFailure(validation))
           }
+          else {
+            const va = fromSuccess(validation)
+            changed = changed || ( va !== a )
+            t.push(va)
+          }
         }
-        return errors.length ? failures(errors) : success(a)
+        return errors.length ? failures(errors) : success(changed ? t : as)
       }, arr.validate(v, c))
     }
   }
@@ -429,15 +444,22 @@ export function intersection<TS: Array<Type<mixed>>>(types: TS, name?: string): 
     types,
     name: name || `(${types.map(getTypeName).join(' & ')})`,
     validate: (v, c) => {
+      let t = v
+      let changed = false
       const errors = []
       for (let i = 0, len = types.length; i < len; i++) {
         const type = types[i]
-        const validation = type.validate(v, c.concat(getContextEntry(String(i), type)))
+        const validation = type.validate(t, c.concat(getContextEntry(String(i), type)))
         if (isFailure(validation)) {
           pushAll(errors, fromFailure(validation))
         }
+        else {
+          const vv = fromSuccess(validation)
+          changed = changed || ( vv !== t )
+          t = vv
+        }
       }
-      return errors.length ? failures(errors) : success(v)
+      return errors.length ? failures(errors) : success(changed ? t : v)
     }
   }
 }
@@ -480,18 +502,31 @@ export function mapping<D: string, RTD: Type<D>, C, RTC: Type<C>>(domain: RTD, c
     name: name || `{ [key: ${getTypeName(domain)}]: ${getTypeName(codomain)} }`,
     validate: (v, c) => {
       return either.chain(o => {
+        const t = {}
         const errors = []
+        let changed = false
         for (let k in o) {
+          const ok = o[k]
           const domainValidation = domain.validate(k, c.concat(getContextEntry(k, domain)))
+          const codomainValidation = codomain.validate(ok, c.concat(getContextEntry(k, codomain)))
           if (isFailure(domainValidation)) {
             pushAll(errors, fromFailure(domainValidation))
           }
-          const codomainValidation = codomain.validate(o[k], c.concat(getContextEntry(k, codomain)))
+          else {
+            const vk = fromSuccess(domainValidation)
+            changed = changed || ( vk !== k )
+            k = vk
+          }
           if (isFailure(codomainValidation)) {
             pushAll(errors, fromFailure(codomainValidation))
           }
+          else {
+            const vok = fromSuccess(codomainValidation)
+            changed = changed || ( vok !== ok )
+            t[k] = vok
+          }
         }
-        return errors.length ? failures(errors) : success(o)
+        return errors.length ? failures(errors) : success(changed ? t : o)
       }, obj.validate(v, c))
     }
   }
@@ -622,18 +657,26 @@ export function $shape<P: Props, RT: ObjectType<P> | $ExactType<P>>(type: RT, na
     name: name || `$Shape<${type.name}>`,
     validate: (v, c) => {
       return either.chain(o => {
+        const t = {}
         const errors = []
-        for (let prop in props) {
-          if (o.hasOwnProperty(prop)) {
-            const type = props[prop]
-            const validation = type.validate(o[prop], c.concat(getContextEntry(prop, type)))
+        let changed = false
+        for (let k in props) {
+          if (o.hasOwnProperty(k)) {
+            const ok = o[k]
+            const type = props[k]
+            const validation = type.validate(ok, c.concat(getContextEntry(k, type)))
             if (isFailure(validation)) {
               pushAll(errors, fromFailure(validation))
+            }
+            else {
+              const vok = fromSuccess(validation)
+              changed = changed || ( vok !== ok )
+              t[k] = vok
             }
           }
         }
         pushAll(errors, checkAdditionalProps(props, o, c))
-        return errors.length ? failures(errors) : success(o)
+        return errors.length ? failures(errors) : success(changed ? t : o)
       }, obj.validate(v, c))
     }
   }
@@ -661,15 +704,23 @@ export function object<P: Props>(props: P, name?: string): ObjectType<P> {
     name: name || getDefaultObjectTypeName(props),
     validate: (v, c) => {
       return either.chain(o => {
+        const t = Object.assign({}, o)
         const errors = []
+        let changed = false
         for (let k in props) {
+          const ok = o[k]
           const type = props[k]
-          const validation = type.validate(o[k], c.concat(getContextEntry(k, type)))
+          const validation = type.validate(ok, c.concat(getContextEntry(k, type)))
           if (isFailure(validation)) {
             pushAll(errors, fromFailure(validation))
           }
+          else {
+            const vok = fromSuccess(validation)
+            changed = changed || ( vok !== ok )
+            t[k] = vok
+          }
         }
-        return errors.length ? failures(errors) : success(o)
+        return errors.length ? failures(errors) : success(changed ? t : o)
       }, obj.validate(v, c))
     }
   }

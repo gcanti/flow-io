@@ -5,7 +5,11 @@ declare var it: (title: string, f: () => void) => void;
 
 import * as t from '../src/index'
 import assert from 'assert'
-import { assertValidationFailure, assertValidationSuccess } from './helpers'
+import {
+  assertValidationFailure,
+  assertValidationSuccess,
+  number2
+} from './helpers'
 
 describe('array', () => {
 
@@ -15,10 +19,16 @@ describe('array', () => {
     assertValidationSuccess(t.validate([1, 2, 3], T))
   })
 
-  it('should return the same reference if validation succeeded', () => {
+  it('should return the same reference if validation succeeded and nothing changed', () => {
     const T = t.array(t.number)
     const value = [1, 2, 3]
     assert.strictEqual(t.fromSuccess(t.validate(value, T)), value)
+  })
+
+  it('should return the a new reference if validation succeeded and something changed', () => {
+    const T = t.array(number2)
+    const value = [1, 2, 3]
+    assert.deepEqual(t.fromSuccess(t.validate(value, T)), [2, 4, 6])
   })
 
   it('should fail validating an invalid value', () => {
