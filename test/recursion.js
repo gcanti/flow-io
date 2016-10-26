@@ -33,13 +33,13 @@ describe('recursion', () => {
       b: t.maybe(self)
     }))
     assertValidationFailure(t.validate(1, T), [
-      'Invalid value 1 supplied to : T'
+      'Invalid value 1 supplied to T'
     ])
     assertValidationFailure(t.validate({}, T), [
-      'Invalid value undefined supplied to : T/a: number'
+      'Invalid value undefined supplied to T/a: number'
     ])
     assertValidationFailure(t.validate({ a: 1, b: {} }, T), [
-      'Invalid value undefined supplied to : T/b: ?T/a: number'
+      'Invalid value undefined supplied to T/b/a: number'
     ])
   })
 

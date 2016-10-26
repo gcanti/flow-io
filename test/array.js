@@ -34,10 +34,10 @@ describe('array', () => {
   it('should fail validating an invalid value', () => {
     const T = t.array(t.number)
     assertValidationFailure(t.validate(1, T), [
-      'Invalid value 1 supplied to : Array<number>'
+      'Invalid value 1 supplied to Array<number>'
     ])
     assertValidationFailure(t.validate([1, 's', 3], T), [
-      'Invalid value "s" supplied to : Array<number>/1: number'
+      'Invalid value "s" supplied to Array<number>/1: number'
     ])
   })
 

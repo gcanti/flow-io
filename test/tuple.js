@@ -34,14 +34,14 @@ describe('tuple', () => {
   it('should fail validating an invalid value', () => {
     const T = t.tuple([t.number, t.string])
     assertValidationFailure(t.validate([], T), [
-      'Invalid value undefined supplied to : [number, string]/0: number',
-      'Invalid value undefined supplied to : [number, string]/1: string'
+      'Invalid value undefined supplied to [number, string]/0: number',
+      'Invalid value undefined supplied to [number, string]/1: string'
     ])
     assertValidationFailure(t.validate([1], T), [
-      'Invalid value undefined supplied to : [number, string]/1: string'
+      'Invalid value undefined supplied to [number, string]/1: string'
     ])
     assertValidationFailure(t.validate([1, 1], T), [
-      'Invalid value 1 supplied to : [number, string]/1: string'
+      'Invalid value 1 supplied to [number, string]/1: string'
     ])
   })
 

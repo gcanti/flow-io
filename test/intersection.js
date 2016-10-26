@@ -34,7 +34,7 @@ describe('intersection', () => {
   it('should fail validating an invalid value', () => {
     const T = t.intersection([t.object({ a: t.number }), t.object({ b: t.number })])
     assertValidationFailure(t.validate({ a: 1 }, T), [
-      'Invalid value undefined supplied to : ({ a: number } & { b: number })/1: { b: number }/b: number'
+      'Invalid value undefined supplied to ({ a: number } & { b: number })/1/b: number'
     ])
   })
 

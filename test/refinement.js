@@ -24,7 +24,7 @@ describe('refinement', () => {
   it('should fail validating an invalid value', () => {
     const T = t.refinement(t.number, n => n >= 0)
     assertValidationFailure(t.validate(-1, T), [
-      'Invalid value -1 supplied to : (number | <function1>)'
+      'Invalid value -1 supplied to (number | <function1>)'
     ])
   })
 

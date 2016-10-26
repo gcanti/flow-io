@@ -38,13 +38,13 @@ describe('object', () => {
   it('should fail validating an invalid value', () => {
     const T = t.object({ a: t.string })
     assertValidationFailure(t.validate(1, T), [
-      'Invalid value 1 supplied to : { a: string }'
+      'Invalid value 1 supplied to { a: string }'
     ])
     assertValidationFailure(t.validate({}, T), [
-      'Invalid value undefined supplied to : { a: string }/a: string'
+      'Invalid value undefined supplied to { a: string }/a: string'
     ])
     assertValidationFailure(t.validate({ a: 1 }, T), [
-      'Invalid value 1 supplied to : { a: string }/a: string'
+      'Invalid value 1 supplied to { a: string }/a: string'
     ])
   })
 

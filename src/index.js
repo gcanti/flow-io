@@ -52,10 +52,10 @@ function stringify(value: mixed): string {
 function getContextPath(context: Context): string {
   return context.map(({ key, name }, index) => {
     if (index === context.length - 1) {
-      return key ? `${key}: ${name}` : name;
+      return key ? `${key}: ${name}` : name
     }
-    return key || name;
-  }).join('/');
+    return key || name
+  }).join('/')
 }
 
 function getDefaultDescription(value: mixed, context: Context): string {

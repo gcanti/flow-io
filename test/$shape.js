@@ -34,17 +34,17 @@ describe('$shape', () => {
   it('should fail validating an invalid value', () => {
     const T = t.$shape(t.object({ a: t.string }))
     assertValidationFailure(t.validate(1, T), [
-      'Invalid value 1 supplied to : $Shape<{ a: string }>'
+      'Invalid value 1 supplied to $Shape<{ a: string }>'
     ])
     assertValidationFailure(t.validate({ a: 1 }, T), [
-      'Invalid value 1 supplied to : $Shape<{ a: string }>/a: string'
+      'Invalid value 1 supplied to $Shape<{ a: string }>/a: string'
     ])
   })
 
   it('should check for additional props', () => {
     const T = t.$shape(t.object({ a: t.string }))
     assertValidationFailure(t.validate({ a: 's', additional: 2 }, T), [
-      'Invalid value 2 supplied to : $Shape<{ a: string }>/additional: nil'
+      'Invalid value 2 supplied to $Shape<{ a: string }>/additional: nil'
     ])
   })
 

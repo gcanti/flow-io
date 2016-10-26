@@ -25,7 +25,7 @@ describe('maybe', () => {
   it('should fail validating an invalid value', () => {
     const T = t.maybe(t.number)
     assertValidationFailure(t.validate('s', T), [
-      'Invalid value "s" supplied to : ?number'
+      'Invalid value "s" supplied to ?number'
     ])
   })
 
