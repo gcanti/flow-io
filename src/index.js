@@ -18,13 +18,17 @@ export type TypeOf<RT> = ExtractType<*, RT>;
 //
 // `Type` type class
 //
-
-export type ContextEntry = {
-  key: string,
-  name: string
+export type Type<T> = {
+  name: string;
+  validate: Validation<T>;
 };
 
-export type Context = Array<ContextEntry>;
+export type ContextEntry<T> = {
+  key: string,
+  type: Type<T>,
+};
+
+export type Context = Array<ContextEntry<any>>;
 
 export type ValidationError = {
   value: mixed,
@@ -36,11 +40,6 @@ export type ValidationResult<T> = Either<Array<ValidationError>, T>;
 
 export type Validation<T> = (value: mixed, context: Context) => ValidationResult<T>;
 
-export type Type<T> = {
-  name: string;
-  validate: Validation<T>;
-};
-
 //
 // helpers
 //
@@ -50,7 +49,7 @@ function stringify(value: mixed): string {
 }
 
 function getContextPath(context: Context): string {
-  return context.map(({ key, name }) => `${key}: ${name}`).join('/')
+  return context.map(({ key, type }) => `${key}: ${type.name}`).join('/')
 }
 
 function getDefaultDescription(value: mixed, context: Context): string {
@@ -87,15 +86,15 @@ function checkAdditionalProps(props: Props, o: Object, c: Context): Array<Valida
 // API
 //
 
-export function getContextEntry<T>(key: string, type: Type<T>): ContextEntry {
+export function getContextEntry<T>(key: string, type: Type<T>): ContextEntry<T> {
   return {
     key,
-    name: type.name
+    type
   }
 }
 
 export function getDefaultContext<T>(type: Type<T>): Context {
-  return [{ key: '', name: type.name }]
+  return [{ key: '', type }]
 }
 
 export function getTypeName<T>(type: Type<T>): string {
