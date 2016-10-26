@@ -29,7 +29,7 @@ describe('classOf', () => {
     class C {}
     const T = t.classOf(A)
     assertValidationFailure(t.validate(C, T), [
-      'Invalid value C supplied to : Class<A>'
+      'Invalid value C supplied to Class<A>'
     ])
   })
 

@@ -26,7 +26,7 @@ describe('instanceOf', () => {
     class A {}
     const T = t.instanceOf(A)
     assertValidationFailure(t.validate(1, T), [
-      'Invalid value 1 supplied to : A'
+      'Invalid value 1 supplied to A'
     ])
   })
 

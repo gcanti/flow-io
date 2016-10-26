@@ -34,10 +34,10 @@ describe('mapping', () => {
   it('should fail validating an invalid value', () => {
     const T = t.mapping(t.refinement(t.string, s => s.length >= 2), t.number)
     assertValidationFailure(t.validate({ a: 1 }, T), [
-      'Invalid value "a" supplied to : { [key: (string | <function1>)]: number }/a: (string | <function1>)'
+      'Invalid value "a" supplied to { [key: (string | <function1>)]: number }/a: (string | <function1>)'
     ])
     assertValidationFailure(t.validate({ aa: 's' }, T), [
-      'Invalid value "s" supplied to : { [key: (string | <function1>)]: number }/aa: number'
+      'Invalid value "s" supplied to { [key: (string | <function1>)]: number }/aa: number'
     ])
   })
 
