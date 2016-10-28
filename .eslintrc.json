@@ -1,6 +1,6 @@
 {
   "parser": "babel-eslint",
-  "extends": ["eslint:recommended"],
+  "extends": ["eslint:recommended", "plugin:flowtype/recommended"],
   "env": {
     "browser": true,
     "node": true
@@ -13,11 +13,10 @@
     }
   },
   "plugins": [
-    "flow-vars"
+    "flowtype"
   ],
   "rules": {
     "semi": [2, "never"],
-    "flow-vars/define-flow-type": 1,
-    "flow-vars/use-flow-type": 1
+    "flowtype/semi": [2, "always"]
   }
 }

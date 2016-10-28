@@ -183,7 +183,7 @@ export interface LiteralType<T> extends Type<T> {
   value: T;
 }
 
-export function literal<T: string | number | boolean, O: $Exact<{ value: T }>>(o: O): LiteralType<$PropertyType<O, 'value'>> { // eslint-disable-line no-unused-vars
+export function literal<T: string | number | boolean, O: $Exact<{ value: T }>>(o: O): LiteralType<$PropertyType<O, 'value'>> {
   const value = o.value
   return {
     kind: 'literal',
@@ -321,7 +321,7 @@ export interface ArrayType<RT> extends Type<Array<TypeOf<RT>>> {
   type: RT;
 }
 
-export function array<T, RT: Type<T>>(type: RT, name?: string): ArrayType<RT> { // eslint-disable-line no-unused-vars
+export function array<T, RT: Type<T>>(type: RT, name?: string): ArrayType<RT> {
   return {
     kind: 'array',
     type,
@@ -472,7 +472,7 @@ export interface MaybeType<RT> extends Type<?TypeOf<RT>> {
   type: RT;
 }
 
-export function maybe<T, RT: Type<T>>(type: RT, name?: string): MaybeType<RT> { // eslint-disable-line no-unused-vars
+export function maybe<T, RT: Type<T>>(type: RT, name?: string): MaybeType<RT> {
   return {
     kind: 'maybe',
     type,
@@ -493,7 +493,7 @@ export interface MappingType<RTD, RTC> extends Type<{ [key: TypeOf<RTD>]: TypeOf
   codomain: RTC;
 }
 
-export function mapping<D: string, RTD: Type<D>, C, RTC: Type<C>>(domain: RTD, codomain: RTC, name?: string): MappingType<RTD, RTC> { // eslint-disable-line no-unused-vars
+export function mapping<D: string, RTD: Type<D>, C, RTC: Type<C>>(domain: RTD, codomain: RTC, name?: string): MappingType<RTD, RTC> {
   return {
     kind: 'mapping',
     domain,
@@ -543,7 +543,7 @@ export interface RefinementType<RT> extends Type<TypeOf<RT>> {
   predicate: Predicate<TypeOf<RT>>;
 }
 
-export function refinement<T, RT: Type<T>>(type: RT, predicate: Predicate<T>, name?: string): RefinementType<RT> { // eslint-disable-line no-unused-vars
+export function refinement<T, RT: Type<T>>(type: RT, predicate: Predicate<T>, name?: string): RefinementType<RT> {
   return {
     kind: 'refinement',
     type,
@@ -592,7 +592,7 @@ function getKeys<P: Props>(type: ObjectType<P> | $ExactType<P> | $ShapeType<*>) 
   return getKeys(type.type)
 }
 
-export function $keys<P: Props, ORT, RT: ObjectType<P> | $ExactType<P> | $ShapeType<ORT>>(type: RT, name?: string): $KeysType<RT> { // eslint-disable-line no-unused-vars
+export function $keys<P: Props, ORT, RT: ObjectType<P> | $ExactType<P> | $ShapeType<ORT>>(type: RT, name?: string): $KeysType<RT> {
   const keys = getKeys(type)
   return {
     kind: '$keys',
@@ -648,7 +648,7 @@ export interface $ShapeType<RT> extends Type<$Shape<PropsType<PropsOf<RT>>>> {
   type: RT
 }
 
-export function $shape<P: Props, RT: ObjectType<P> | $ExactType<P>>(type: RT, name?: string): $ShapeType<RT> { // eslint-disable-line no-unused-vars
+export function $shape<P: Props, RT: ObjectType<P> | $ExactType<P>>(type: RT, name?: string): $ShapeType<RT> {
   const props = type.props
   return {
     kind: '$shape',
