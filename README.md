@@ -5,17 +5,17 @@ A value of type `Type<T>` (called "runtime type") is a representation of the typ
 ```js
 interface Type<T> {
   name: string;
-  validate: (value: mixed, context: Context) => ValidationResult<T>;
+  validate: (value: mixed, context: Context) => Validation<T>;
 }
 ```
 
-where `Context` and `ValidationResut<T>` are defined as
+where `Context` and `Validation<T>` are defined as
 
 ```js
 type ContextEntry = { key: string, name: string };
 type Context = Array<ContextEntry>;
 type ValidationError = { value: mixed, context: Context, description: string };
-type ValidationResult<T> = Either<Array<ValidationError>, T>;
+type Validation<T> = Either<Array<ValidationError>, T>;
 ```
 
 For example the runtime type representing the type `string` is
@@ -71,6 +71,32 @@ Runtime types can be inspected
 ```js
 const nameType: Type<string> = Person.props.name
 const ageType: Type<number> = Person.props.age
+```
+
+# Error reporters
+
+A reporter implements the following interface
+
+```js
+export interface Reporter<A> {
+  report: (validation: Validation<*>) => A;
+}
+```
+
+This package exports two default reporters
+
+- `PathReporter: Reporter<Array<string>>`
+- `ThrowReporter: Reporter<void>`
+
+Example
+
+```js
+import * as t from 'flow-runtime'
+import { PathReporter, ThrowReporter } from 'flow-runtime/lib/reporters/default'
+
+const validation = t.validate('a', t.number)
+console.log(PathReporter.report(validation)) // => ["Invalid value "a" supplied to : number"]
+ThrowReporter.report(validation) // => throws Invalid value "a" supplied to : number
 ```
 
 # Implemented types / combinators
