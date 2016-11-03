@@ -18,6 +18,7 @@ export type TypeOf<RT> = ExtractType<*, RT>;
 //
 // `Type` type class
 //
+
 export type Validate<T> = (value: mixed, context: Context) => Validation<T>;
 
 export type Type<T> = {
@@ -34,8 +35,7 @@ export type Context = Array<ContextEntry<any>>;
 
 export type ValidationError = {
   value: mixed,
-  context: Context,
-  description: string
+  context: Context
 };
 
 export type Validation<T> = Either<Array<ValidationError>, T>;
@@ -44,28 +44,11 @@ export type Validation<T> = Either<Array<ValidationError>, T>;
 // helpers
 //
 
-function stringify(value: mixed): string {
-  return isFunction(value) ? getFunctionName(value) : JSON.stringify(value)
-}
-
-function getContextPath(context: Context): string {
-  return context.map(({ key, type }) => `${key}: ${type.name}`).join('/')
-}
-
-function getDefaultDescription(value: mixed, context: Context): string {
-  return `Invalid value ${stringify(value)} supplied to ${getContextPath(context)}`
-}
-
 function getValidationError(value: mixed, context: Context): ValidationError {
   return {
     value,
-    context,
-    description: getDefaultDescription(value, context)
+    context
   }
-}
-
-function getFunctionName(f: Function): string {
-  return f.displayName || f.name || `<function${f.length}>`
 }
 
 function pushAll<A>(xs: Array<A>, ys: Array<A>): void {
@@ -85,6 +68,10 @@ function checkAdditionalProps(props: Props, o: Object, c: Context): Array<Valida
 //
 // API
 //
+
+export function getFunctionName(f: Function): string {
+  return f.displayName || f.name || `<function${f.length}>`
+}
 
 export function getContextEntry<T>(key: string, type: Type<T>): ContextEntry<T> {
   return {
@@ -145,8 +132,8 @@ export function chain<A, B>(f: (a: A) => Validation<B>, validation: Validation<A
   return either.chain(f, validation)
 }
 
-export function fold<A, R>(failure: (errors: Array<ValidationError>) => R, success: (value: A) => R): (validation: Validation<A>) => R {
-  return validation => isFailure(validation) ? failure(fromFailure(validation)) : success(fromSuccess(validation))
+export function fold<A, R>(failure: (errors: Array<ValidationError>) => R, success: (value: A) => R, validation: Validation<A>): R {
+  return isFailure(validation) ? failure(fromFailure(validation)) : success(fromSuccess(validation))
 }
 
 export function validateWithContext<T>(value: mixed, context: Context, type: Type<T>): Validation<T> {
@@ -163,16 +150,6 @@ export function unsafeValidate<T>(value: mixed, type: Type<T>): T {
 
 export function is<T>(value: mixed, type: Type<T>): boolean {
   return isSuccess(validate(value, type))
-}
-
-export function crash(message: string): void {
-  throw new TypeError(`[flow-runtime failure]\n${message}`)
-}
-
-export function assert(guard: boolean, message?: () => string): void {
-  if (guard !== true) {
-    crash(message ? message() : 'Assert failed (turn on "Pause on exceptions" in your Source panel)')
-  }
 }
 
 //
