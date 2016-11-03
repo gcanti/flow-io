@@ -148,6 +148,10 @@ export function chain<A, B>(f: (a: A) => ValidationResult<B>, validation: Valida
   return either.chain(f, validation)
 }
 
+export function fold<A, R>(failure: (errors: Array<ValidationError>) => R, success: (value: A) => R): (validation: ValidationResult<A>) => R {
+  return validation => isFailure(validation) ? failure(fromFailure(validation)) : success(fromSuccess(validation))
+}
+
 export function validateWithContext<T>(value: mixed, context: Context, type: Type<T>): ValidationResult<T> {
   return type.validate(value, context)
 }
