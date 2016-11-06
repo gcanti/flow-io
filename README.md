@@ -31,22 +31,6 @@ export const string: Type<string> = {
 }
 ```
 
-The type `T` can be extracted from a runtime type
-
-```js
-import * as t from 'flow-runtime'
-import type { TypeOf } from 'flow-runtime'
-
-const Person = t.object({
-  name: t.string,
-  age: t.number
-})
-
-// this is equivalent to
-// type PersonT = { name: string, age: number };
-type PersonT = TypeOf<typeof Person>;
-```
-
 A runtime type can be used to validate an object in memory (for example an API payload)
 
 ```js
