@@ -234,34 +234,22 @@ export const any: IrreducibleType<any> = {
   validate: (v, c) => success(v) // eslint-disable-line no-unused-vars
 }
 
-function isString(v: mixed) /* : boolean %checks */ {
-  return typeof v === 'string'
-}
-
 export const string: IrreducibleType<string> = {
   kind: 'irreducible',
   name: 'string',
-  validate: (v, c) => isString(v) ? success(v) : failure(v, c)
-}
-
-function isNumber(v: mixed) /* : boolean %checks */ {
-  return typeof v === 'number' && isFinite(v) && !isNaN(v)
+  validate: (v, c) => typeof v === 'string' ? success(v) : failure(v, c)
 }
 
 export const number: IrreducibleType<number> = {
   kind: 'irreducible',
   name: 'number',
-  validate: (v, c) => isNumber(v) ? success(v) : failure(v, c)
-}
-
-function isBoolean(v: mixed) /* : boolean %checks */ {
-  return typeof v === 'boolean'
+  validate: (v, c) => typeof v === 'number' && isFinite(v) && !isNaN(v) ? success(v) : failure(v, c)
 }
 
 export const boolean: IrreducibleType<boolean> = {
   kind: 'irreducible',
   name: 'boolean',
-  validate: (v, c) => isBoolean(v) ? success(v) : failure(v, c)
+  validate: (v, c) => typeof v === 'boolean' ? success(v) : failure(v, c)
 }
 
 export const arr: IrreducibleType<Array<mixed>> = {
@@ -270,24 +258,16 @@ export const arr: IrreducibleType<Array<mixed>> = {
   validate: (v, c) => Array.isArray(v) ? success(v) : failure(v, c)
 }
 
-function isObject(v: mixed) /* : boolean %checks */ {
-  return !isNil(v) && typeof v === 'object' && !Array.isArray(v)
-}
-
 export const obj: IrreducibleType<Object> = {
   kind: 'irreducible',
   name: 'Object',
-  validate: (v, c) => isObject(v) ? success(v) : failure(v, c)
-}
-
-function isFunction(v: mixed) /* : boolean %checks */ {
-  return typeof v === 'function'
+  validate: (v, c) => !isNil(v) && typeof v === 'object' && !Array.isArray(v) ? success(v) : failure(v, c)
 }
 
 export const fun: IrreducibleType<Function> = {
   kind: 'irreducible',
   name: 'Function',
-  validate: (v, c) => isFunction(v) ? success(v) : failure(v, c)
+  validate: (v, c) => typeof v === 'function' ? success(v) : failure(v, c)
 }
 
 //

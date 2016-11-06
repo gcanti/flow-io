@@ -18,29 +18,29 @@ type ValidationError = { value: mixed, context: Context, description: string };
 type Validation<T> = Either<Array<ValidationError>, T>;
 ```
 
-For example the runtime type representing the type `string` is
+Example: a runtime type representing the type `string` is
 
 ```js
-function isString(v: mixed) /* : boolean %checks */ {
-  return typeof v === 'string'
-}
+import * as t from 'flow-runtime'
 
 export const string: Type<string> = {
   name: 'string',
-  validate: (v, c) => isString(v) ? ...
+  validate: (v, c) => typeof v === 'string' ? t.success(v) : t.failure(v, c)
 }
 ```
 
 A runtime type can be used to validate an object in memory (for example an API payload)
 
 ```js
+import * as t from 'flow-runtime'
+
 // ok
 t.unsafeValidate(JSON.parse('{"name":"Giulio","age":43}'), Person)
 
 // throws Invalid value undefined supplied to : { name: string, age: number }/age: number
 t.unsafeValidate(JSON.parse('{"name":"Giulio"}'), Person)
 
-// doesn't throw, returns a data structure containing
+// doesn't throw, returns a data structure (Either) containing
 // the validation errors
 const validation = t.validate(JSON.parse('{"name":"Giulio"}'), Person)
 if (t.isSuccess(validation)) {
