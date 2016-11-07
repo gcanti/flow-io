@@ -18,9 +18,12 @@ export type TypeOf<RT> = ExtractType<*, RT>;
 //
 // `Type` type class
 //
+
+export type Validate<T> = (value: mixed, context: Context) => Validation<T>;
+
 export type Type<T> = {
   name: string;
-  validate: Validation<T>;
+  validate: Validate<T>;
 };
 
 export type ContextEntry<T> = {
@@ -32,40 +35,20 @@ export type Context = Array<ContextEntry<any>>;
 
 export type ValidationError = {
   value: mixed,
-  context: Context,
-  description: string
+  context: Context
 };
 
-export type ValidationResult<T> = Either<Array<ValidationError>, T>;
-
-export type Validation<T> = (value: mixed, context: Context) => ValidationResult<T>;
+export type Validation<T> = Either<Array<ValidationError>, T>;
 
 //
 // helpers
 //
 
-function stringify(value: mixed): string {
-  return isFunction(value) ? getFunctionName(value) : JSON.stringify(value)
-}
-
-function getContextPath(context: Context): string {
-  return context.map(({ key, type }) => `${key}: ${type.name}`).join('/')
-}
-
-function getDefaultDescription(value: mixed, context: Context): string {
-  return `Invalid value ${stringify(value)} supplied to ${getContextPath(context)}`
-}
-
 function getValidationError(value: mixed, context: Context): ValidationError {
   return {
     value,
-    context,
-    description: getDefaultDescription(value, context)
+    context
   }
-}
-
-function getFunctionName(f: Function): string {
-  return f.displayName || f.name || `<function${f.length}>`
 }
 
 function pushAll<A>(xs: Array<A>, ys: Array<A>): void {
@@ -86,6 +69,10 @@ function checkAdditionalProps(props: Props, o: Object, c: Context): Array<Valida
 // API
 //
 
+export function getFunctionName(f: Function): string {
+  return f.displayName || f.name || `<function${f.length}>`
+}
+
 export function getContextEntry<T>(key: string, type: Type<T>): ContextEntry<T> {
   return {
     key,
@@ -101,58 +88,59 @@ export function getTypeName<T>(type: Type<T>): string {
   return type.name
 }
 
-export function failures<T>(errors: Array<ValidationError>): ValidationResult<T> {
+export function failures<T>(errors: Array<ValidationError>): Validation<T> {
   return either.left(errors)
 }
 
-export function failure<T>(value: mixed, context: Context): ValidationResult<T> {
+export function failure<T>(value: mixed, context: Context): Validation<T> {
   return either.left([getValidationError(value, context)])
 }
 
-export function success<T>(value: T): ValidationResult<T> {
+export function success<T>(value: T): Validation<T> {
   return either.right(value)
 }
 
-export function isFailure<T>(validation: ValidationResult<T>): boolean {
+export function isFailure<T>(validation: Validation<T>): boolean {
   return either.isLeft(validation)
 }
 
-export function isSuccess<T>(validation: ValidationResult<T>): boolean {
+export function isSuccess<T>(validation: Validation<T>): boolean {
   return either.isRight(validation)
 }
 
-export function fromFailure<T>(validation: ValidationResult<T>): Array<ValidationError> {
+export function fromFailure<T>(validation: Validation<T>): Array<ValidationError> {
   return either.fromLeft(validation)
 }
 
-export function fromSuccess<T>(validation: ValidationResult<T>): T {
-  if (isFailure(validation)) {
-    crash(fromFailure(validation).map(e => e.description).join('\n'))
-  }
+export function fromSuccess<T>(validation: Validation<T>): T {
   return either.fromRight(validation)
 }
 
-export function of<A>(a: A): ValidationResult<A> {
+export function of<A>(a: A): Validation<A> {
   return either.of(a)
 }
 
-export function map<A, B>(f: (a: A) => B, validation: ValidationResult<A>): ValidationResult<B> {
+export function map<A, B>(f: (a: A) => B, validation: Validation<A>): Validation<B> {
   return either.map(f, validation)
 }
 
-export function ap<A, B>(f: ValidationResult<(a: A) => B>, validation: ValidationResult<A>): ValidationResult<B> {
+export function ap<A, B>(f: Validation<(a: A) => B>, validation: Validation<A>): Validation<B> {
   return either.ap(f, validation)
 }
 
-export function chain<A, B>(f: (a: A) => ValidationResult<B>, validation: ValidationResult<A>): ValidationResult<B> {
+export function chain<A, B>(f: (a: A) => Validation<B>, validation: Validation<A>): Validation<B> {
   return either.chain(f, validation)
 }
 
-export function validateWithContext<T>(value: mixed, context: Context, type: Type<T>): ValidationResult<T> {
+export function fold<A, R>(failure: (errors: Array<ValidationError>) => R, success: (value: A) => R, validation: Validation<A>): R {
+  return isFailure(validation) ? failure(fromFailure(validation)) : success(fromSuccess(validation))
+}
+
+export function validateWithContext<T>(value: mixed, context: Context, type: Type<T>): Validation<T> {
   return type.validate(value, context)
 }
 
-export function validate<T>(value: mixed, type: Type<T>): ValidationResult<T> {
+export function validate<T>(value: mixed, type: Type<T>): Validation<T> {
   return validateWithContext(value, getDefaultContext(type), type)
 }
 
@@ -162,16 +150,6 @@ export function unsafeValidate<T>(value: mixed, type: Type<T>): T {
 
 export function is<T>(value: mixed, type: Type<T>): boolean {
   return isSuccess(validate(value, type))
-}
-
-export function crash(message: string): void {
-  throw new TypeError(`[flow-runtime failure]\n${message}`)
-}
-
-export function assert(guard: boolean, message?: () => string): void {
-  if (guard !== true) {
-    crash(message ? message() : 'Assert failed (turn on "Pause on exceptions" in your Source panel)')
-  }
 }
 
 //
@@ -256,34 +234,22 @@ export const any: IrreducibleType<any> = {
   validate: (v, c) => success(v) // eslint-disable-line no-unused-vars
 }
 
-function isString(v: mixed) /* : boolean %checks */ {
-  return typeof v === 'string'
-}
-
 export const string: IrreducibleType<string> = {
   kind: 'irreducible',
   name: 'string',
-  validate: (v, c) => isString(v) ? success(v) : failure(v, c)
-}
-
-function isNumber(v: mixed) /* : boolean %checks */ {
-  return typeof v === 'number' && isFinite(v) && !isNaN(v)
+  validate: (v, c) => typeof v === 'string' ? success(v) : failure(v, c)
 }
 
 export const number: IrreducibleType<number> = {
   kind: 'irreducible',
   name: 'number',
-  validate: (v, c) => isNumber(v) ? success(v) : failure(v, c)
-}
-
-function isBoolean(v: mixed) /* : boolean %checks */ {
-  return typeof v === 'boolean'
+  validate: (v, c) => typeof v === 'number' && isFinite(v) && !isNaN(v) ? success(v) : failure(v, c)
 }
 
 export const boolean: IrreducibleType<boolean> = {
   kind: 'irreducible',
   name: 'boolean',
-  validate: (v, c) => isBoolean(v) ? success(v) : failure(v, c)
+  validate: (v, c) => typeof v === 'boolean' ? success(v) : failure(v, c)
 }
 
 export const arr: IrreducibleType<Array<mixed>> = {
@@ -292,24 +258,16 @@ export const arr: IrreducibleType<Array<mixed>> = {
   validate: (v, c) => Array.isArray(v) ? success(v) : failure(v, c)
 }
 
-function isObject(v: mixed) /* : boolean %checks */ {
-  return !isNil(v) && typeof v === 'object' && !Array.isArray(v)
-}
-
 export const obj: IrreducibleType<Object> = {
   kind: 'irreducible',
   name: 'Object',
-  validate: (v, c) => isObject(v) ? success(v) : failure(v, c)
-}
-
-function isFunction(v: mixed) /* : boolean %checks */ {
-  return typeof v === 'function'
+  validate: (v, c) => !isNil(v) && typeof v === 'object' && !Array.isArray(v) ? success(v) : failure(v, c)
 }
 
 export const fun: IrreducibleType<Function> = {
   kind: 'irreducible',
   name: 'Function',
-  validate: (v, c) => isFunction(v) ? success(v) : failure(v, c)
+  validate: (v, c) => typeof v === 'function' ? success(v) : failure(v, c)
 }
 
 //

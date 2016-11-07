@@ -5,58 +5,42 @@ A value of type `Type<T>` (called "runtime type") is a representation of the typ
 ```js
 interface Type<T> {
   name: string;
-  validate: (value: mixed, context: Context) => ValidationResult<T>;
+  validate: (value: mixed, context: Context) => Validation<T>;
 }
 ```
 
-where `Context` and `ValidationResut<T>` are defined as
+where `Context` and `Validation<T>` are defined as
 
 ```js
 type ContextEntry = { key: string, name: string };
 type Context = Array<ContextEntry>;
 type ValidationError = { value: mixed, context: Context, description: string };
-type ValidationResult<T> = Either<Array<ValidationError>, T>;
+type Validation<T> = Either<Array<ValidationError>, T>;
 ```
 
-For example the runtime type representing the type `string` is
-
-```js
-function isString(v: mixed) /* : boolean %checks */ {
-  return typeof v === 'string'
-}
-
-export const string: Type<string> = {
-  name: 'string',
-  validate: (v, c) => isString(v) ? ...
-}
-```
-
-The type `T` can be extracted from a runtime type
+Example: a runtime type representing the type `string` is
 
 ```js
 import * as t from 'flow-runtime'
-import type { TypeOf } from 'flow-runtime'
 
-const Person = t.object({
-  name: t.string,
-  age: t.number
-})
-
-// this is equivalent to
-// type PersonT = { name: string, age: number };
-type PersonT = TypeOf<typeof Person>;
+export const string: Type<string> = {
+  name: 'string',
+  validate: (v, c) => typeof v === 'string' ? t.success(v) : t.failure(v, c)
+}
 ```
 
 A runtime type can be used to validate an object in memory (for example an API payload)
 
 ```js
+import * as t from 'flow-runtime'
+
 // ok
 t.unsafeValidate(JSON.parse('{"name":"Giulio","age":43}'), Person)
 
 // throws Invalid value undefined supplied to : { name: string, age: number }/age: number
 t.unsafeValidate(JSON.parse('{"name":"Giulio"}'), Person)
 
-// doesn't throw, returns a data structure containing
+// doesn't throw, returns a data structure (Either) containing
 // the validation errors
 const validation = t.validate(JSON.parse('{"name":"Giulio"}'), Person)
 if (t.isSuccess(validation)) {
@@ -71,6 +55,32 @@ Runtime types can be inspected
 ```js
 const nameType: Type<string> = Person.props.name
 const ageType: Type<number> = Person.props.age
+```
+
+# Error reporters
+
+A reporter implements the following interface
+
+```js
+export interface Reporter<A> {
+  report: (validation: Validation<*>) => A;
+}
+```
+
+This package exports two default reporters
+
+- `PathReporter: Reporter<Array<string>>`
+- `ThrowReporter: Reporter<void>`
+
+Example
+
+```js
+import * as t from 'flow-runtime'
+import { PathReporter, ThrowReporter } from 'flow-runtime/lib/reporters/default'
+
+const validation = t.validate('a', t.number)
+console.log(PathReporter.report(validation)) // => ["Invalid value "a" supplied to : number"]
+ThrowReporter.report(validation) // => throws Invalid value "a" supplied to : number
 ```
 
 # Implemented types / combinators

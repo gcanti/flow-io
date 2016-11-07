@@ -1,17 +1,17 @@
 // @flow
 
 import assert from 'assert'
-import type { ValidationResult, Type } from '../src/index'
+import type { Validation, Type } from '../src/index'
 import * as t from '../src/index'
+import { PathReporter } from '../src/reporters/default'
 
-export function assertValidationSuccess<T>(validation: ValidationResult<T>): void {
+export function assertValidationSuccess<T>(validation: Validation<T>): void {
   assert.ok(t.isSuccess(validation))
 }
 
-export function assertValidationFailure<T>(validation: ValidationResult<T>, descriptions: Array<string>): void {
+export function assertValidationFailure<T>(validation: Validation<T>, descriptions: Array<string>): void {
   assert.ok(t.isFailure(validation))
-  const errors = t.fromFailure(validation)
-  assert.deepEqual(errors.map(e => e.description), descriptions)
+  assert.deepEqual(PathReporter.report(validation), descriptions)
 }
 
 export const number2: Type<number> = {
