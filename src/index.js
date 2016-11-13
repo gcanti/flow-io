@@ -203,7 +203,7 @@ export interface ClassType<T> extends Type<T> {
 }
 
 export function classOf<T>(ctor: Class<T>, name?: string): ClassType<Class<T>> {
-  const type = refinement(fun, f => f === ctor || f.prototype instanceof ctor, name)
+  const type = refinement(functionType, f => f === ctor || f.prototype instanceof ctor, name)
   return {
     kind: 'class',
     ctor,
@@ -222,6 +222,18 @@ export interface IrreducibleType<T> extends Type<T> {
 
 function isNil(v: mixed) /* : boolean %checks */ {
   return v === void 0 || v === null
+}
+
+export const nullType: IrreducibleType<null> = {
+  kind: 'irreducible',
+  name: 'null',
+  validate: (v, c) => v === null ? success(v) : failure(v, c)
+}
+
+export const voidType: IrreducibleType<void> = {
+  kind: 'irreducible',
+  name: 'void',
+  validate: (v, c) => v === void 0 ? success(v) : failure(v, c)
 }
 
 export const nil: IrreducibleType<void | null> = {
@@ -254,19 +266,19 @@ export const boolean: IrreducibleType<boolean> = {
   validate: (v, c) => typeof v === 'boolean' ? success(v) : failure(v, c)
 }
 
-export const arr: IrreducibleType<Array<mixed>> = {
+export const arrayType: IrreducibleType<Array<mixed>> = {
   kind: 'irreducible',
   name: 'Array',
   validate: (v, c) => Array.isArray(v) ? success(v) : failure(v, c)
 }
 
-export const obj: IrreducibleType<Object> = {
+export const objectType: IrreducibleType<Object> = {
   kind: 'irreducible',
   name: 'Object',
   validate: (v, c) => !isNil(v) && typeof v === 'object' && !Array.isArray(v) ? success(v) : failure(v, c)
 }
 
-export const fun: IrreducibleType<Function> = {
+export const functionType: IrreducibleType<Function> = {
   kind: 'irreducible',
   name: 'Function',
   validate: (v, c) => typeof v === 'function' ? success(v) : failure(v, c)
@@ -304,7 +316,7 @@ export function array<T, RT: Type<T>>(type: RT, name?: string): ArrayType<RT> {
           }
         }
         return errors.length ? failures(errors) : success(changed ? t : unsafeCoerce(as))
-      }, arr.validate(v, c))
+      }, arrayType.validate(v, c))
     }
   }
 }
@@ -378,7 +390,7 @@ export function tuple<TS: Array<Type<*>>>(types: TS, name?: string): TupleType<T
           }
         }
         return errors.length ? failures(errors) : success(changed ? t : as)
-      }, arr.validate(v, c))
+      }, arrayType.validate(v, c))
     }
   }
 }
@@ -486,7 +498,7 @@ export function mapping<D: string, RTD: Type<D>, C, RTC: Type<C>>(domain: RTD, c
           }
         }
         return errors.length ? failures(errors) : success(changed ? t : o)
-      }, obj.validate(v, c))
+      }, objectType.validate(v, c))
     }
   }
 }
@@ -636,7 +648,7 @@ export function $shape<P: Props, RT: ObjectType<P> | $ExactType<P>>(type: RT, na
         }
         pushAll(errors, checkAdditionalProps(props, o, c))
         return errors.length ? failures(errors) : success(changed ? t : o)
-      }, obj.validate(v, c))
+      }, objectType.validate(v, c))
     }
   }
 }
@@ -680,7 +692,7 @@ export function object<P: Props>(props: P, name?: string): ObjectType<P> {
           }
         }
         return errors.length ? failures(errors) : success(changed ? t : o)
-      }, obj.validate(v, c))
+      }, objectType.validate(v, c))
     }
   }
 }

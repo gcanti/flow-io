@@ -16,7 +16,7 @@ describe('union', () => {
   })
 
   it('should return the same reference if validation succeeded', () => {
-    const T = t.union([t.obj, t.number])
+    const T = t.union([t.objectType, t.number])
     const value = {}
     assert.strictEqual(t.fromSuccess(t.validate(value, T)), value)
   })
