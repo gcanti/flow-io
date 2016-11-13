@@ -161,7 +161,9 @@ export interface LiteralType<T> extends Type<T> {
   value: T;
 }
 
-export function literal<T: string | number | boolean, O: $Exact<{ value: T }>>(o: O): LiteralType<$PropertyType<O, 'value'>> {
+export type LiteralTypeValue = string | number | boolean;
+
+export function literal<T: LiteralTypeValue, O: $Exact<{ value: T }>>(o: O): LiteralType<$PropertyType<O, 'value'>> {
   const value = o.value
   return {
     kind: 'literal',
