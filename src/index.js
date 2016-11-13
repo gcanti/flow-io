@@ -157,7 +157,7 @@ export function is<T>(value: mixed, type: Type<T>): boolean {
 //
 
 export interface LiteralType<T> extends Type<T> {
-  kind: 'literal';
+  tag: 'literal';
   value: T;
 }
 
@@ -166,7 +166,7 @@ export type LiteralTypeValue = string | number | boolean;
 export function literal<T: LiteralTypeValue, O: $Exact<{ value: T }>>(o: O): LiteralType<$PropertyType<O, 'value'>> {
   const value = o.value
   return {
-    kind: 'literal',
+    tag: 'literal',
     value,
     name: JSON.stringify(value),
     validate: (v, c) => {
@@ -180,13 +180,13 @@ export function literal<T: LiteralTypeValue, O: $Exact<{ value: T }>>(o: O): Lit
 //
 
 export interface InstanceOfType<T> extends Type<T> {
-  kind: 'instanceOf';
+  tag: 'instanceOf';
   ctor: Class<T>;
 }
 
 export function instanceOf<T>(ctor: Class<T>, name?: string): InstanceOfType<T> {
   return {
-    kind: 'instanceOf',
+    tag: 'instanceOf',
     ctor,
     name: name || getFunctionName(ctor),
     validate: (v, c) => v instanceof ctor ? success(v) : failure(v, c)
@@ -198,14 +198,14 @@ export function instanceOf<T>(ctor: Class<T>, name?: string): InstanceOfType<T> 
 //
 
 export interface ClassType<T> extends Type<T> {
-  kind: 'class';
+  tag: 'class';
   ctor: T;
 }
 
 export function classOf<T>(ctor: Class<T>, name?: string): ClassType<Class<T>> {
   const type = refinement(functionType, f => f === ctor || f.prototype instanceof ctor, name)
   return {
-    kind: 'class',
+    tag: 'class',
     ctor,
     name: name || `Class<${getFunctionName(ctor)}>`,
     validate: (v, c) => type.validate(v, c)
@@ -217,7 +217,7 @@ export function classOf<T>(ctor: Class<T>, name?: string): ClassType<Class<T>> {
 //
 
 export interface IrreducibleType<T> extends Type<T> {
-  kind: 'irreducible';
+  tag: 'irreducible';
 }
 
 function isNil(v: mixed) /* : boolean %checks */ {
@@ -225,61 +225,61 @@ function isNil(v: mixed) /* : boolean %checks */ {
 }
 
 export const nullType: IrreducibleType<null> = {
-  kind: 'irreducible',
+  tag: 'irreducible',
   name: 'null',
   validate: (v, c) => v === null ? success(v) : failure(v, c)
 }
 
 export const voidType: IrreducibleType<void> = {
-  kind: 'irreducible',
+  tag: 'irreducible',
   name: 'void',
   validate: (v, c) => v === void 0 ? success(v) : failure(v, c)
 }
 
 export const nil: IrreducibleType<void | null> = {
-  kind: 'irreducible',
+  tag: 'irreducible',
   name: 'nil',
   validate: (v, c) => isNil(v) ? success(v) : failure(v, c)
 }
 
 export const any: IrreducibleType<any> = {
-  kind: 'irreducible',
+  tag: 'irreducible',
   name: 'any',
   validate: (v, c) => success(v) // eslint-disable-line no-unused-vars
 }
 
 export const string: IrreducibleType<string> = {
-  kind: 'irreducible',
+  tag: 'irreducible',
   name: 'string',
   validate: (v, c) => typeof v === 'string' ? success(v) : failure(v, c)
 }
 
 export const number: IrreducibleType<number> = {
-  kind: 'irreducible',
+  tag: 'irreducible',
   name: 'number',
   validate: (v, c) => typeof v === 'number' && isFinite(v) && !isNaN(v) ? success(v) : failure(v, c)
 }
 
 export const boolean: IrreducibleType<boolean> = {
-  kind: 'irreducible',
+  tag: 'irreducible',
   name: 'boolean',
   validate: (v, c) => typeof v === 'boolean' ? success(v) : failure(v, c)
 }
 
 export const arrayType: IrreducibleType<Array<mixed>> = {
-  kind: 'irreducible',
+  tag: 'irreducible',
   name: 'Array',
   validate: (v, c) => Array.isArray(v) ? success(v) : failure(v, c)
 }
 
 export const objectType: IrreducibleType<Object> = {
-  kind: 'irreducible',
+  tag: 'irreducible',
   name: 'Object',
   validate: (v, c) => !isNil(v) && typeof v === 'object' && !Array.isArray(v) ? success(v) : failure(v, c)
 }
 
 export const functionType: IrreducibleType<Function> = {
-  kind: 'irreducible',
+  tag: 'irreducible',
   name: 'Function',
   validate: (v, c) => typeof v === 'function' ? success(v) : failure(v, c)
 }
@@ -289,13 +289,13 @@ export const functionType: IrreducibleType<Function> = {
 //
 
 export interface ArrayType<RT> extends Type<Array<TypeOf<RT>>> {
-  kind: 'array';
+  tag: 'array';
   type: RT;
 }
 
 export function array<T, RT: Type<T>>(type: RT, name?: string): ArrayType<RT> {
   return {
-    kind: 'array',
+    tag: 'array',
     type,
     name: name || `Array<${getTypeName(type)}>`,
     validate: (v, c) => {
@@ -326,7 +326,7 @@ export function array<T, RT: Type<T>>(type: RT, name?: string): ArrayType<RT> {
 //
 
 export interface UnionType<TS, T> extends Type<T> {
-  kind: 'union';
+  tag: 'union';
   types: TS;
 }
 
@@ -337,7 +337,7 @@ declare function union<A, B, TA: Type<A>, TB: Type<B>, TS: [TA, TB]>(types: TS, 
 
 export function union<TS: Array<Type<mixed>>>(types: TS, name?: string): UnionType<TS, *> { // eslint-disable-line no-redeclare
   return {
-    kind: 'union',
+    tag: 'union',
     types,
     name: name || `(${types.map(getTypeName).join(' | ')})`,
     validate: (v, c) => {
@@ -357,7 +357,7 @@ export function union<TS: Array<Type<mixed>>>(types: TS, name?: string): UnionTy
 //
 
 export interface TupleType<TS, T> extends Type<T> {
-  kind: 'tuple';
+  tag: 'tuple';
   types: TS;
 }
 
@@ -368,7 +368,7 @@ declare function tuple<A, B, TA: Type<A>, TB: Type<B>, TS: [TA, TB]>(types: TS, 
 
 export function tuple<TS: Array<Type<*>>>(types: TS, name?: string): TupleType<TS, *> { // eslint-disable-line no-redeclare
   return {
-    kind: 'tuple',
+    tag: 'tuple',
     types,
     name: name || `[${types.map(getTypeName).join(', ')}]`,
     validate: (v, c) => {
@@ -400,7 +400,7 @@ export function tuple<TS: Array<Type<*>>>(types: TS, name?: string): TupleType<T
 //
 
 export interface IntersectionType<TS, T> extends Type<T> {
-  kind: 'intersection';
+  tag: 'intersection';
   types: TS;
 }
 
@@ -411,7 +411,7 @@ declare function intersection<A, B, TA: Type<A>, TB: Type<B>, TS: [TA, TB]>(type
 
 export function intersection<TS: Array<Type<mixed>>>(types: TS, name?: string): IntersectionType<TS, *> {  // eslint-disable-line no-redeclare
   return {
-    kind: 'intersection',
+    tag: 'intersection',
     types,
     name: name || `(${types.map(getTypeName).join(' & ')})`,
     validate: (v, c) => {
@@ -440,13 +440,13 @@ export function intersection<TS: Array<Type<mixed>>>(types: TS, name?: string): 
 //
 
 export interface MaybeType<RT> extends Type<?TypeOf<RT>> {
-  kind: 'maybe';
+  tag: 'maybe';
   type: RT;
 }
 
 export function maybe<T, RT: Type<T>>(type: RT, name?: string): MaybeType<RT> {
   return {
-    kind: 'maybe',
+    tag: 'maybe',
     type,
     name: name || `?${getTypeName(type)}`,
     validate: (v, c) => {
@@ -460,14 +460,14 @@ export function maybe<T, RT: Type<T>>(type: RT, name?: string): MaybeType<RT> {
 //
 
 export interface MappingType<RTD, RTC> extends Type<{ [key: TypeOf<RTD>]: TypeOf<RTC> }> {
-  kind: 'mapping';
+  tag: 'mapping';
   domain: RTD;
   codomain: RTC;
 }
 
 export function mapping<D: string, RTD: Type<D>, C, RTC: Type<C>>(domain: RTD, codomain: RTC, name?: string): MappingType<RTD, RTC> {
   return {
-    kind: 'mapping',
+    tag: 'mapping',
     domain,
     codomain,
     name: name || `{ [key: ${getTypeName(domain)}]: ${getTypeName(codomain)} }`,
@@ -510,14 +510,14 @@ export function mapping<D: string, RTD: Type<D>, C, RTC: Type<C>>(domain: RTD, c
 export type Predicate<T> = (value: T) => boolean;
 
 export interface RefinementType<RT> extends Type<TypeOf<RT>> {
-  kind: 'refinement';
+  tag: 'refinement';
   type: RT;
   predicate: Predicate<TypeOf<RT>>;
 }
 
 export function refinement<T, RT: Type<T>>(type: RT, predicate: Predicate<T>, name?: string): RefinementType<RT> {
   return {
-    kind: 'refinement',
+    tag: 'refinement',
     type,
     predicate,
     name: name || `(${getTypeName(type)} | ${getFunctionName(predicate)})`,
@@ -549,12 +549,12 @@ export function recursion<T, RT: Type<T>>(name: string, definition: (self: Type<
 //
 
 export interface $KeysType<RT> extends Type<$Keys<TypeOf<RT>>> {
-  kind: '$keys';
+  tag: '$keys';
   type: RT;
 }
 
 function getKeys<P: Props>(type: ObjectType<P> | $ExactType<P> | $ShapeType<*>) {
-  if (type.kind === 'object' || type.kind === '$exact') {
+  if (type.tag === 'object' || type.tag === '$exact') {
     const keys = {}
     for (let k in type.props) {
       keys[k] = true
@@ -567,7 +567,7 @@ function getKeys<P: Props>(type: ObjectType<P> | $ExactType<P> | $ShapeType<*>) 
 export function $keys<P: Props, ORT, RT: ObjectType<P> | $ExactType<P> | $ShapeType<ORT>>(type: RT, name?: string): $KeysType<RT> {
   const keys = getKeys(type)
   return {
-    kind: '$keys',
+    tag: '$keys',
     type,
     name: name || `$Keys<${type.name}>`,
     validate: (v, c) => {
@@ -586,7 +586,7 @@ export function $keys<P: Props, ORT, RT: ObjectType<P> | $ExactType<P> | $ShapeT
 export type PropsType<P: Props> = $ObjMap<P, <T>(v: Type<T>) => T>;
 
 export interface $ExactType<P: Props> extends Type<$Exact<PropsType<P>>> {
-  kind: '$exact';
+  tag: '$exact';
   props: P;
 }
 
@@ -595,7 +595,7 @@ export function $exact<P: Props>(props: P, name?: string): $ExactType<P> {
   name = name || `$Exact<${getDefaultObjectTypeName(props)}>`
   const type = object(props, name)
   return {
-    kind: '$exact',
+    tag: '$exact',
     props,
     name,
     validate: (v, c) => {
@@ -616,14 +616,14 @@ type ExtractProps<P, RT: ObjectType<P> | $ExactType<P>> = P; // eslint-disable-l
 export type PropsOf<T> = ExtractProps<*, T>;
 
 export interface $ShapeType<RT> extends Type<$Shape<PropsType<PropsOf<RT>>>> {
-  kind: '$shape';
+  tag: '$shape';
   type: RT
 }
 
 export function $shape<P: Props, RT: ObjectType<P> | $ExactType<P>>(type: RT, name?: string): $ShapeType<RT> {
   const props = type.props
   return {
-    kind: '$shape',
+    tag: '$shape',
     type,
     name: name || `$Shape<${type.name}>`,
     validate: (v, c) => {
@@ -660,7 +660,7 @@ export function $shape<P: Props, RT: ObjectType<P> | $ExactType<P>>(type: RT, na
 export type Props = { [key: string]: Type<*> };
 
 export interface ObjectType<P: Props> extends Type<PropsType<P>> {
-  kind: 'object';
+  tag: 'object';
   props: P;
 }
 
@@ -670,7 +670,7 @@ export function getDefaultObjectTypeName(props: Props): string {
 
 export function object<P: Props>(props: P, name?: string): ObjectType<P> {
   return {
-    kind: 'object',
+    tag: 'object',
     props,
     name: name || getDefaultObjectTypeName(props),
     validate: (v, c) => {
