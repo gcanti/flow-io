@@ -17,7 +17,7 @@ describe('maybe', () => {
   })
 
   it('should return the same reference if validation succeeded', () => {
-    const T = t.maybe(t.objectType)
+    const T = t.maybe(t.Object)
     const value = {}
     assert.strictEqual(t.fromSuccess(t.validate(value, T)), value)
   })
