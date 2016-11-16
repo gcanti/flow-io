@@ -1,7 +1,8 @@
 // @flow
 
 import assert from 'assert'
-import type { Validation, Type } from '../src/index'
+import type { Validation } from '../src/index'
+import { Type } from '../src/index'
 import * as t from '../src/index'
 import { PathReporter } from '../src/reporters/default'
 
@@ -14,7 +15,7 @@ export function assertValidationFailure<T>(validation: Validation<T>, descriptio
   assert.deepEqual(PathReporter.report(validation), descriptions)
 }
 
-export const number2: Type<number> = {
-  name: 'number2',
-  validate: (v, c) => t.map(n => n * 2, t.number.validate(v, c))
-}
+export const number2: Type<number> = new Type(
+  'number2',
+  (v, c) => t.map(n => n * 2, t.number.validate(v, c))
+)

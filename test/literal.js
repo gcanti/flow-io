@@ -9,12 +9,12 @@ import { assertValidationFailure, assertValidationSuccess } from './helpers'
 describe('literal', () => {
 
   it('should succeed validating a valid value', () => {
-    const T = t.literal({ value: 'a' })
+    const T = t.literal('a')
     assertValidationSuccess(t.validate('a', T))
   })
 
   it('should fail validating an invalid value', () => {
-    const T = t.literal({ value: 'a' })
+    const T = t.literal('a')
     assertValidationFailure(t.validate(1, T), [
       'Invalid value 1 supplied to : "a"'
     ])

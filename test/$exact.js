@@ -1,5 +1,3 @@
-// @flow
-
 declare var describe: (title: string, f: () => void) => void;
 declare var it: (title: string, f: () => void) => void;
 

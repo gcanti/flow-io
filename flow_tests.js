@@ -1,12 +1,17 @@
 // @flow
 
 import type {
-  TypeOf,
   ContextEntry,
   Context,
   ValidationError,
   Validation,
   Validate,
+  TypeOf,
+  Predicate,
+  Props
+} from './src/index'
+
+import {
   Type,
   LiteralType,
   InstanceOfType,
@@ -18,12 +23,8 @@ import type {
   MaybeType,
   MappingType,
   RefinementType,
-  $KeysType,
   $ExactType,
-  $ShapeType,
   ObjectType,
-  Predicate,
-  Props
 } from './src/index'
 
 import * as t from './src/index'
@@ -70,7 +71,7 @@ const RTI2 = t.instanceOf(A)
 // literals
 //
 
-const T3 = t.literal({ value: 'a' })
+const T3 = t.literal('a')
 t.map(v3 => {
   (v3: 'a')
   ;(v3: TypeOf<typeof T3>)
@@ -79,9 +80,10 @@ t.map(v3 => {
 }, t.validate('a', T3))
 // $ExpectError
 ;(1: TypeOf<typeof T3>)
+;('b': TypeOf<typeof T3>)
 
 // runtime type introspection
-const RTI3 = t.literal({ value: 'a' })
+const RTI3 = t.literal('a')
 ;(RTI3.name: string)
 ;(RTI3.value: string)
 
@@ -105,8 +107,6 @@ t.map(v4 => {
 const RTI4 = t.array(t.object({ a: t.number }))
 ;(RTI4.name: string)
 ;(RTI4.type: Type<{ a: number }>)
-;(RTI4.type.props: Props)
-;(RTI4.type.props.a: Type<number>)
 
 //
 // unions
@@ -126,9 +126,7 @@ t.map(v5 => {
 const RTI5 = t.union([t.string, t.object({ a: t.number })])
 ;(RTI5.name: string)
 ;(RTI5.types[0]: Type<string>)
-;(RTI5.types[1]: ObjectType<Props>)
-;(RTI5.types[1].props: Props)
-;(RTI5.types[1].props.a: Type<number>)
+;(RTI5.types[1]: Type<{ a: number }>)
 
 //
 // tuples
@@ -148,9 +146,7 @@ t.map(v6 => {
 const RTI6 = t.tuple([t.string, t.object({ a: t.number })])
 ;(RTI6.name: string)
 ;(RTI6.types[0]: Type<string>)
-;(RTI6.types[1]: ObjectType<Props>)
-;(RTI6.types[1].props: Props)
-;(RTI6.types[1].props.a: Type<number>)
+;(RTI6.types[1]: Type<{ a: number }>)
 
 //
 // intersections
@@ -178,9 +174,7 @@ t.map(v7 => {
 const RTI7 = t.intersection([t.object({ a: t.number }), t.object({ b: t.number })])
 ;(RTI7.name: string)
 ;(RTI7.types[0]: Type<{ a: number }>)
-;(RTI7.types[1]: ObjectType<Props>)
-;(RTI7.types[1].props: Props)
-;(RTI7.types[1].props.b: Type<number>)
+;(RTI7.types[1]: Type<{ b: number }>)
 
 //
 // maybes
@@ -201,15 +195,13 @@ t.map(v8 => {
 // runtime type introspection
 const RTI8 = t.maybe(t.object({ a: t.number }))
 ;(RTI8.name: string)
-;(RTI8.type: ObjectType<Props>)
-;(RTI8.type.props: Props)
-;(RTI8.type.props.a: Type<number>)
+;(RTI8.type: Type<{ a: number }>)
 
 //
 // mappings
 //
 
-const T9 = t.mapping(t.union([t.literal({ value: 'a' }), t.literal({ value: 'b' })]), t.number)
+const T9 = t.mapping(t.union([t.literal('a'), t.literal('b')]), t.number)
 t.map(v9 => {
   (v9: { [key: 'a' | 'b']: number })
   ;(v9: TypeOf<typeof T9>)
@@ -221,12 +213,10 @@ t.map(v9 => {
 ;(1: TypeOf<typeof T9>)
 
 // runtime type introspection
-const RTI9 = t.mapping(t.union([t.literal({ value: 'a' }), t.literal({ value: 'b' })]), t.object({ a: t.number }))
+const RTI9 = t.mapping(t.union([t.literal('a'), t.literal('b')]), t.object({ a: t.number }))
 ;(RTI9.name: string)
-;(RTI9.domain: Type<'a'| 'b'>)
-;(RTI9.codomain: ObjectType<Props>)
-;(RTI9.codomain.props: Props)
-;(RTI9.codomain.props.a: Type<number>)
+;(RTI9.domain: Type<'a' | 'b'>)
+;(RTI9.codomain: Type<{ a: number }>)
 
 //
 // refinements
@@ -245,10 +235,7 @@ t.map(v10 => {
 // runtime type introspection
 const RTI10 = t.refinement(t.object({ a: t.number }), () => true)
 ;(RTI10.name: string)
-;(RTI10.type: ObjectType<Props>)
-;(RTI10.type.props: Props)
-;(RTI10.type.props.a: Type<number>)
-;(RTI10.predicate: Predicate<{ a: number }>)
+;(RTI10.type: Type<{ a: number }>)
 
 //
 // recursive types
@@ -277,31 +264,6 @@ const RTI11 = t.recursion('T11', self => t.object({
   b: t.maybe(self)
 }))
 ;(RTI11.name: string)
-;(RTI11.props: Props)
-;(RTI11.props.a: Type<number>)
-;(RTI11.props.b: Type<?T11T>)
-
-//
-// $Keys
-//
-
-const T12 = t.$keys(t.object({ a: t.number, b: t.number }))
-t.map(v12 => {
-  (v12: 'a' | 'b')
-  ;(v12: TypeOf<typeof T12>)
-  ;(v12: string)
-  // $ExpectError
-  ;(v12: number)
-}, t.validate('a', T12))
-// $ExpectError
-;(1: TypeOf<typeof T12>)
-
-// runtime type introspection
-const RTI12 = t.$keys(t.object({ a: t.number, b: t.number }))
-;(RTI12.name: string)
-;(RTI12.type: ObjectType<Props>)
-;(RTI12.type.props: Props)
-;(RTI12.type.props.a: Type<number>)
 
 //
 // $Exact
@@ -322,45 +284,6 @@ const RTI13 = t.$exact({ a: t.number })
 ;(RTI13.name: string)
 ;(RTI13.props: Props)
 ;(RTI13.props.a: Type<number>)
-
-// keys
-const KT13 = t.$keys(T13)
-t.map(kv13 => {
-  (kv13: 'a')
-  ;(kv13: TypeOf<typeof KT13>)
-  // $ExpectError
-  ;(kv13: number)
-}, t.validate('a', KT13))
-
-//
-// $Shape
-//
-
-const T14 = t.$shape(t.object({ a: t.number }))
-t.map(v14 => {
-  (v14: $Shape<{ a: number }>)
-  ;(v14: TypeOf<typeof T14>)
-  // $ExpectError
-  ;(v14: { a: number, b: number })
-}, t.validate({}, T14))
-// $ExpectError
-;(1: TypeOf<typeof T14>)
-
-// runtime type introspection
-const RTI14 = t.$shape(t.object({ a: t.number }))
-;(RTI14.name: string)
-;(RTI14.type: ObjectType<Props>)
-;(RTI14.type.props: Props)
-;(RTI14.type.props.a: Type<number>)
-
-// keys
-const KT14 = t.$keys(T14)
-t.map(kv14 => {
-  (kv14: 'a')
-  ;(kv14: TypeOf<typeof KT14>)
-  // $ExpectError
-  ;(kv14: number)
-}, t.validate('a', KT14))
 
 //
 // objects
@@ -394,11 +317,6 @@ t.map(v15 => {
 ;(1: TypeOf<typeof T15>)
 // $ExpectError
 ;({}: TypeOf<typeof T15>)
-// $ExpectError
-;({
-  // a: 'a', // <= Flow bug???
-  // b: 'b'
-}: TypeOf<typeof T15>)
 
 const RTI15 = t.object({
   a: t.number,
@@ -411,19 +329,6 @@ const RTI15 = t.object({
 })
 ;(RTI15.name: string)
 ;(RTI15.props: Props)
-;(RTI15.props.a: Type<number>)
-;(RTI15.props.b.props.c: Type<string>)
-;(RTI15.props.b.props.d: ObjectType<Props>)
-;(RTI15.props.b.props.d.props.e: Type<number>)
-
-// keys
-const KT15 = t.$keys(T15)
-t.map(kv15 => {
-  (kv15: 'a' | 'b')
-  ;(kv15: TypeOf<typeof KT15>)
-  // $ExpectError
-  ;(kv15: number)
-}, t.validate('a', KT15))
 
 //
 // classOf
@@ -443,4 +348,3 @@ t.map(v16 => {
 const RTI16 = t.classOf(A)
 ;(RTI16.name: string)
 ;(RTI16.ctor: Class<A>)
-
