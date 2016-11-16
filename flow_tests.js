@@ -107,8 +107,6 @@ t.map(v4 => {
 const RTI4 = t.array(t.object({ a: t.number }))
 ;(RTI4.name: string)
 ;(RTI4.type: Type<{ a: number }>)
-// ;(RTI4.type.props: Props)
-// ;(RTI4.type.props.a: Type<number>)
 
 //
 // unions
@@ -128,9 +126,7 @@ t.map(v5 => {
 const RTI5 = t.union([t.string, t.object({ a: t.number })])
 ;(RTI5.name: string)
 ;(RTI5.types[0]: Type<string>)
-// ;(RTI5.types[1]: ObjectType<Props>)
-// ;(RTI5.types[1].props: Props)
-// ;(RTI5.types[1].props.a: Type<number>)
+;(RTI5.types[1]: Type<{ a: number }>)
 
 //
 // tuples
@@ -150,9 +146,7 @@ t.map(v6 => {
 const RTI6 = t.tuple([t.string, t.object({ a: t.number })])
 ;(RTI6.name: string)
 ;(RTI6.types[0]: Type<string>)
-// ;(RTI6.types[1]: ObjectType<Props>)
-// ;(RTI6.types[1].props: Props)
-// ;(RTI6.types[1].props.a: Type<number>)
+;(RTI6.types[1]: Type<{ a: number }>)
 
 //
 // intersections
@@ -180,9 +174,7 @@ t.map(v7 => {
 const RTI7 = t.intersection([t.object({ a: t.number }), t.object({ b: t.number })])
 ;(RTI7.name: string)
 ;(RTI7.types[0]: Type<{ a: number }>)
-// ;(RTI7.types[1]: ObjectType<Props>)
-// ;(RTI7.types[1].props: Props)
-// ;(RTI7.types[1].props.b: Type<number>)
+;(RTI7.types[1]: Type<{ b: number }>)
 
 //
 // maybes
@@ -203,9 +195,7 @@ t.map(v8 => {
 // runtime type introspection
 const RTI8 = t.maybe(t.object({ a: t.number }))
 ;(RTI8.name: string)
-// ;(RTI8.type: ObjectType<Props>)
-// ;(RTI8.type.props: Props)
-// ;(RTI8.type.props.a: Type<number>)
+;(RTI8.type: Type<{ a: number }>)
 
 //
 // mappings
@@ -225,10 +215,8 @@ t.map(v9 => {
 // runtime type introspection
 const RTI9 = t.mapping(t.union([t.literal('a'), t.literal('b')]), t.object({ a: t.number }))
 ;(RTI9.name: string)
-// ;(RTI9.domain: Type<'a'| 'b'>)
-// ;(RTI9.codomain: ObjectType<Props>)
-// ;(RTI9.codomain.props: Props)
-// ;(RTI9.codomain.props.a: Type<number>)
+;(RTI9.domain: Type<'a' | 'b'>)
+;(RTI9.codomain: Type<{ a: number }>)
 
 //
 // refinements
@@ -247,10 +235,7 @@ t.map(v10 => {
 // runtime type introspection
 const RTI10 = t.refinement(t.object({ a: t.number }), () => true)
 ;(RTI10.name: string)
-// ;(RTI10.type: ObjectType<Props>)
-// ;(RTI10.type.props: Props)
-// ;(RTI10.type.props.a: Type<number>)
-// ;(RTI10.predicate: Predicate<{ a: number }>)
+;(RTI10.type: Type<{ a: number }>)
 
 //
 // recursive types
@@ -279,9 +264,6 @@ const RTI11 = t.recursion('T11', self => t.object({
   b: t.maybe(self)
 }))
 ;(RTI11.name: string)
-// ;(RTI11.props: Props)
-// ;(RTI11.props.a: Type<number>)
-// ;(RTI11.props.b: Type<?T11T>)
 
 //
 // $Exact
@@ -335,11 +317,6 @@ t.map(v15 => {
 ;(1: TypeOf<typeof T15>)
 // $ExpectError
 ;({}: TypeOf<typeof T15>)
-// $ExpectError
-;({
-  // a: 'a', // <= Flow bug???
-  // b: 'b'
-}: TypeOf<typeof T15>)
 
 const RTI15 = t.object({
   a: t.number,
@@ -352,10 +329,6 @@ const RTI15 = t.object({
 })
 ;(RTI15.name: string)
 ;(RTI15.props: Props)
-;(RTI15.props.a: Type<number>)
-// ;(RTI15.props.b.props.c: Type<string>)
-// ;(RTI15.props.b.props.d: ObjectType<Props>)
-// ;(RTI15.props.b.props.d.props.e: Type<number>)
 
 //
 // classOf
