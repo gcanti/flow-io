@@ -26,7 +26,7 @@ export class Type<T> {
 
 export type ContextEntry<T> = {
   key: string,
-  type: Type<T>,
+  type: Type<T>
 };
 
 export type Context = Array<ContextEntry<any>>;
@@ -272,8 +272,8 @@ const functionType: Type<Function> = new Type(
 //
 
 export class ArrayType<T> extends Type<T> {
-  type: Type<*>;
-  constructor(name: string, validate: Validate<T>, type: Type<*>) {
+  type: Type<any>;
+  constructor(name: string, validate: Validate<T>, type: Type<any>) {
     super(name, validate)
     this.type = type
   }
@@ -311,8 +311,8 @@ function array<T, RT: Type<T>>(type: RT, name?: string): ArrayType<Array<T>> {
 //
 
 export class UnionType<T> extends Type<T> {
-  types: Array<Type<*>>;
-  constructor(name: string, validate: Validate<T>, types: Array<Type<*>>) {
+  types: Array<Type<any>>;
+  constructor(name: string, validate: Validate<T>, types: Array<Type<any>>) {
     super(name, validate)
     this.types = types
   }
@@ -323,7 +323,7 @@ declare function union<A, B, C, D>(types: [Type<A>, Type<B>, Type<C>, Type<D>], 
 declare function union<A, B, C>(types: [Type<A>, Type<B>, Type<C>], name?: string) : UnionType<A | B | C>; // eslint-disable-line no-redeclare
 declare function union<A, B>(types: [Type<A>, Type<B>], name?: string) : UnionType<A | B>; // eslint-disable-line no-redeclare
 
-function union(types: Array<Type<*>>, name?: string): UnionType<*> { // eslint-disable-line no-redeclare
+function union(types: Array<Type<any>>, name?: string): UnionType<any> { // eslint-disable-line no-redeclare
   return new UnionType(
     name || `(${types.map(getTypeName).join(' | ')})`,
     (v, c) => {
@@ -344,8 +344,8 @@ function union(types: Array<Type<*>>, name?: string): UnionType<*> { // eslint-d
 //
 
 export class TupleType<T> extends Type<T> {
-  types: Array<Type<*>>;
-  constructor(name: string, validate: Validate<T>, types: Array<Type<*>>) {
+  types: Array<Type<any>>;
+  constructor(name: string, validate: Validate<T>, types: Array<Type<any>>) {
     super(name, validate)
     this.types = types
   }
@@ -356,7 +356,7 @@ declare function tuple<A, B, C, D>(types: [Type<A>, Type<B>, Type<C>, Type<D>], 
 declare function tuple<A, B, C>(types: [Type<A>, Type<B>, Type<C>], name?: string) : TupleType<[A, B, C]>; // eslint-disable-line no-redeclare
 declare function tuple<A, B>(types: [Type<A>, Type<B>], name?: string) : TupleType<[A, B]>; // eslint-disable-line no-redeclare
 
-function tuple(types: Array<Type<*>>, name?: string): TupleType<*> { // eslint-disable-line no-redeclare
+function tuple(types: Array<Type<any>>, name?: string): TupleType<any> { // eslint-disable-line no-redeclare
   return new TupleType(
     name || `[${types.map(getTypeName).join(', ')}]`,
     (v, c) => {
@@ -389,8 +389,8 @@ function tuple(types: Array<Type<*>>, name?: string): TupleType<*> { // eslint-d
 //
 
 export class IntersectionType<T> extends Type<T> {
-  types: Array<Type<*>>;
-  constructor(name: string, validate: Validate<T>, types: Array<Type<*>>) {
+  types: Array<Type<any>>;
+  constructor(name: string, validate: Validate<T>, types: Array<Type<any>>) {
     super(name, validate)
     this.types = types
   }
@@ -401,7 +401,7 @@ declare function intersection<A, B, C, D>(types: [Type<A>, Type<B>, Type<C>, Typ
 declare function intersection<A, B, C>(types: [Type<A>, Type<B>, Type<C>], name?: string) : IntersectionType<A & B & C>; // eslint-disable-line no-redeclare
 declare function intersection<A, B>(types: [Type<A>, Type<B>], name?: string) : IntersectionType<A & B>; // eslint-disable-line no-redeclare
 
-function intersection(types: Array<Type<*>>, name?: string): IntersectionType<*> {  // eslint-disable-line no-redeclare
+function intersection(types: Array<Type<any>>, name?: string): IntersectionType<*> {  // eslint-disable-line no-redeclare
   return new IntersectionType(
     name || `(${types.map(getTypeName).join(' & ')})`,
     (v, c) => {
@@ -431,8 +431,8 @@ function intersection(types: Array<Type<*>>, name?: string): IntersectionType<*>
 //
 
 export class MaybeType<T> extends Type<T> {
-  type: Type<*>;
-  constructor(name: string, validate: Validate<T>, type: Type<*>) {
+  type: Type<any>;
+  constructor(name: string, validate: Validate<T>, type: Type<any>) {
     super(name, validate)
     this.type = type
   }
@@ -451,9 +451,9 @@ function maybe<T>(type: Type<T>, name?: string): MaybeType<?T> {
 //
 
 export class MappingType<T> extends Type<T> {
-  domain: Type<*>;
-  codomain: Type<*>;
-  constructor(name: string, validate: Validate<T>, domain: Type<*>, codomain: Type<*>) {
+  domain: Type<any>;
+  codomain: Type<any>;
+  constructor(name: string, validate: Validate<T>, domain: Type<any>, codomain: Type<any>) {
     super(name, validate)
     this.domain = domain
     this.codomain = codomain
@@ -504,9 +504,9 @@ function mapping<D: string, RTD: Type<D>, C, RTC: Type<C>>(domain: RTD, codomain
 export type Predicate<T> = (value: T) => boolean;
 
 export class RefinementType<T> extends Type<T> {
-  type: Type<*>;
+  type: Type<any>;
   predicate: Predicate<T>;
-  constructor(name: string, validate: Validate<T>, type: Type<*>, predicate: Predicate<T>) {
+  constructor(name: string, validate: Validate<T>, type: Type<any>, predicate: Predicate<T>) {
     super(name, validate)
     this.type = type
     this.predicate = predicate
@@ -529,7 +529,7 @@ function refinement<T>(type: Type<T>, predicate: Predicate<T>, name?: string): R
 // recursive types
 //
 
-function recursion<T, RT: *>(name: string, definition: (self: Type<T>) => RT): RT {
+function recursion<T, RT: Type<T>>(name: string, definition: (self: Type<T>) => RT): RT {
   const Self = new Type(
     name,
     (v, c) => Result.validate(v, c)
@@ -570,7 +570,7 @@ function $exact<P: Props>(props: P, name?: string): $ExactType<$Exact<PropsType<
 // objects
 //
 
-export type Props = { [key: string]: Type<*> };
+export type Props = { [key: string]: Type<any> };
 
 export class ObjectType<T> extends Type<T> {
   props: Props;
