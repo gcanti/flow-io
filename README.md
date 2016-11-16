@@ -34,18 +34,19 @@ A runtime type can be used to validate an object in memory (for example an API p
 ```js
 import * as t from 'flow-runtime'
 
+const Person = t.object({
+  name: t.string,
+  age: t.number
+})
+
 // ok
-t.unsafeValidate(JSON.parse('{"name":"Giulio","age":43}'), Person)
-
+t.fromValidation(JSON.parse('{"name":"Giulio","age":43}'), Person)
 // throws Invalid value undefined supplied to : { name: string, age: number }/age: number
-t.unsafeValidate(JSON.parse('{"name":"Giulio"}'), Person)
+t.fromValidation(JSON.parse('{"name":"Giulio"}'), Person)
 
-// doesn't throw, returns a data structure (Either) containing
-// the validation errors
+// doesn't throw, returns an Either
 const validation = t.validate(JSON.parse('{"name":"Giulio"}'), Person)
-if (t.isSuccess(validation)) {
-  const person: PersonT = t.fromSuccess(validation)
-}
+t.map(person => console.log(person), validation)
 ```
 
 # Runtime type introspection
@@ -53,8 +54,8 @@ if (t.isSuccess(validation)) {
 Runtime types can be inspected
 
 ```js
-const nameType: Type<string> = Person.props.name
-const ageType: Type<number> = Person.props.age
+const Name: Type<string> = Person.props.name
+const Age: Type<number> = Person.props.age
 ```
 
 # Error reporters

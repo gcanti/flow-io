@@ -71,7 +71,7 @@ const RTI2 = t.instanceOf(A)
 // literals
 //
 
-const T3 = t.literal({ value: 'a' })
+const T3 = t.literal('a')
 t.map(v3 => {
   (v3: 'a')
   ;(v3: TypeOf<typeof T3>)
@@ -80,9 +80,10 @@ t.map(v3 => {
 }, t.validate('a', T3))
 // $ExpectError
 ;(1: TypeOf<typeof T3>)
+;('b': TypeOf<typeof T3>)
 
 // runtime type introspection
-const RTI3 = t.literal({ value: 'a' })
+const RTI3 = t.literal('a')
 ;(RTI3.name: string)
 ;(RTI3.value: string)
 
@@ -210,7 +211,7 @@ const RTI8 = t.maybe(t.object({ a: t.number }))
 // mappings
 //
 
-const T9 = t.mapping(t.union([t.literal({ value: 'a' }), t.literal({ value: 'b' })]), t.number)
+const T9 = t.mapping(t.union([t.literal('a'), t.literal('b')]), t.number)
 t.map(v9 => {
   (v9: { [key: 'a' | 'b']: number })
   ;(v9: TypeOf<typeof T9>)
@@ -222,7 +223,7 @@ t.map(v9 => {
 ;(1: TypeOf<typeof T9>)
 
 // runtime type introspection
-const RTI9 = t.mapping(t.union([t.literal({ value: 'a' }), t.literal({ value: 'b' })]), t.object({ a: t.number }))
+const RTI9 = t.mapping(t.union([t.literal('a'), t.literal('b')]), t.object({ a: t.number }))
 ;(RTI9.name: string)
 // ;(RTI9.domain: Type<'a'| 'b'>)
 // ;(RTI9.codomain: ObjectType<Props>)

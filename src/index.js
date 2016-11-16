@@ -13,10 +13,6 @@ type ExtractType<T, RT: Type<T>> = T; // eslint-disable-line no-unused-vars
 
 export type TypeOf<RT> = ExtractType<*, RT>;
 
-//
-// `Type` type class
-//
-
 export type Validate<T> = (value: mixed, context: Context) => Validation<T>;
 
 export class Type<T> {
@@ -146,7 +142,7 @@ function validate<T>(value: mixed, type: Type<T>): Validation<T> {
   return validateWithContext(value, getDefaultContext(type), type)
 }
 
-function unsafeValidate<T>(value: mixed, type: Type<T>): T {
+function fromValidation<T>(value: mixed, type: Type<T>): T {
   return fromSuccess(validate(value, type))
 }
 
@@ -168,8 +164,7 @@ export class LiteralType<T> extends Type<T> {
 
 export type LiteralTypeValue = string | number | boolean;
 
-function literal<T: LiteralTypeValue, O: $Exact<{ value: T }>>(o: O): LiteralType<$PropertyType<O, 'value'>> {
-  const value = o.value
+function literal<T: LiteralTypeValue>(value: T): LiteralType<T> {
   return new LiteralType(
     JSON.stringify(value),
     (v, c) => v === value ? success(value) : failure(v, c),
@@ -637,7 +632,7 @@ export {
   fold,
   validateWithContext,
   validate,
-  unsafeValidate,
+  fromValidation,
   is,
   any,
   string,
