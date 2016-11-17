@@ -92,21 +92,18 @@ ThrowReporter.report(validation) // => throws Invalid value "a" supplied to : nu
 | string | `string` | `string` |
 | number | `number` | `number` |
 | boolean | `boolean` | `boolean` |
-| generic array | `Array<mixed>` | `arr` |
-| generic object | `Object` | `obj` |
-| generic function | `Function` | `fun` |
+| generic object | `Object` | `Object` |
+| generic function | `Function` | `Function` |
 | instance of `C` | `C` | `instanceOf(C)` |
 | class of `C` | `Class<C>` | `classOf(C)` |
 | array | `Array<A>` | `array(A)` |
 | intersection | `A & B` | `intersection([A, B])` |
-| literal | `'s'` | `literal({ value: 's' })` |
+| literal | `'s'` | `literal('s')` |
 | maybe | `?A` | `maybe(A)` |
-| map | `{ [key: A]: B }` | `map(A, B)` |
-| refinement | ✘ | `refinement(A, predicateOnA)` |
+| map | `{ [key: A]: B }` | `mapping(A, B)` |
+| refinement | ✘ | `refinement(A, predicate)` |
 | object | `{ name: string }` | `object({ name: string })` |
 | tuple | `[A, B]` | `tuple([A, B])` |
 | union | `A | B` | `union([A, B])` |
-| $Keys | `$Keys<A>` | `$keys(A)` |
 | $Exact | `{| name: string |}` | `$exact({ name: string })` |
-| $Shape | `$Shape<A>` | `$shape(A)` |
 | function | `(a: A) => B` | ✘ |
