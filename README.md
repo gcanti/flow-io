@@ -21,7 +21,7 @@ type Validation<T> = Either<Array<ValidationError>, T>;
 Example: a runtime type representing the type `string` is
 
 ```js
-import * as t from 'flow-runtime'
+import * as t from 'flow-io'
 
 export const string: Type<string> = new Type(
   'string',
@@ -32,7 +32,7 @@ export const string: Type<string> = new Type(
 A runtime type can be used to validate an object in memory (for example an API payload)
 
 ```js
-import * as t from 'flow-runtime'
+import * as t from 'flow-io'
 
 const Person = t.object({
   name: t.string,
@@ -77,8 +77,8 @@ This package exports two default reporters
 Example
 
 ```js
-import * as t from 'flow-runtime'
-import { PathReporter, ThrowReporter } from 'flow-runtime/lib/reporters/default'
+import * as t from 'flow-io'
+import { PathReporter, ThrowReporter } from 'flow-io/lib/reporters/default'
 
 const validation = t.validate('a', t.number)
 console.log(PathReporter.report(validation)) // => ["Invalid value "a" supplied to : number"]
