@@ -1,3 +1,7 @@
+# This package is deprecated
+
+Checkout [io-ts](https://github.com/gcanti/io-ts)
+
 # The idea
 
 A value of type `Type<T>` (called "runtime type") is a representation of the type `T`:
