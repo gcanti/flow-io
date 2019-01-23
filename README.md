@@ -2,6 +2,8 @@
 
 Checkout [io-ts](https://github.com/gcanti/io-ts)
 
+For Flow projects, checkout [io-flow-types](https://github.com/orlandoc01/io-flow-types) [in progress]
+
 # The idea
 
 A value of type `Type<T>` (called "runtime type") is a representation of the type `T`:
